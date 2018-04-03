@@ -64,6 +64,8 @@ There are three load-balancing policies available:
 * `random` (default) - Randomly select a backend
 * `least_conn` - Select the backend with the fewest active connections
 * `round_robin` - Select the backend in round-robin fashion
+* `first` - Select the first available backend looking by order of declaration from left to right
+
 
 All polices implement randomly spraying packets to backend hosts when *no healthy* hosts are
 available. This is to preeempt the case where the healthchecking (as a mechanism) fails.
