@@ -13,13 +13,19 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
-	met := New("localhost:0")
-	if err := met.OnStartup(); err != nil {
+
+	metLsn := newListener(test.NewDefaultAllocator())
+	if err := metLsn.OnStartup(); err != nil {
 		t.Fatalf("Failed to start metrics handler: %s", err)
 	}
-	defer met.OnShutdown()
+	defer metLsn.OnShutdown()
 
-	met.AddZone("example.org.")
+	listenAddr, err := metLsn.ListeningAddr()
+	if err != nil {
+		t.Fatalf("HTTP listener has no address : %s", err)
+	}
+
+	met := New(metLsn, []string{"example.org."})
 
 	tests := []struct {
 		next          plugin.Handler
@@ -71,7 +77,7 @@ func TestMetrics(t *testing.T) {
 			t.Fatalf("Test %d: Expected no error, but got %s", i, err)
 		}
 
-		result := mtest.Scrape(t, "http://"+ListenAddr+"/metrics")
+		result := mtest.Scrape(t, "http://"+listenAddr+"/metrics")
 
 		if tc.expectedValue != "" {
 			got, _ := mtest.MetricValue(tc.metric, result)
