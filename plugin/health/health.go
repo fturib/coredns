@@ -2,12 +2,13 @@
 package health
 
 import (
-	"github.com/coredns/coredns/plugin/pkg/listener"
 	"io"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/coredns/coredns/plugin/pkg/listener"
 
 	"github.com/coredns/coredns/plugin/pkg/log"
 )

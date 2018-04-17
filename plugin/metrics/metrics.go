@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"fmt"
+
 	"github.com/coredns/coredns/coremain"
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/metrics/vars"
