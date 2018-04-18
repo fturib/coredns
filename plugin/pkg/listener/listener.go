@@ -51,7 +51,7 @@ func areSameIP(ip1 string, ip2 string) bool {
 	return false
 }
 
-func (b booking) isSame(protocol string, hostname string, port string) bool {
+func (b booking) equal(protocol string, hostname string, port string) bool {
 	// Consider that port "0" means "a new port" and will never match another port
 	// Consider that "localhost" or "" is matching both "127.0.01" or "[::1]"
 	if protocol == b.protocol {
@@ -150,7 +150,7 @@ func (l *Distributor) IsBooked(network string, address string) (bool, Booker) {
 		return false, nil
 	}
 	for _, b := range l.booked {
-		if b.isSame(network, hostname, port) {
+		if b.equal(network, hostname, port) {
 			return true, b.booker
 		}
 	}
@@ -165,7 +165,7 @@ func (l *Distributor) BookListener(network string, address string, bookerInfo Bo
 	}
 	// check if already booked - raise error
 	for _, booking := range l.booked {
-		if booking.isSame(network, hostname, port) {
+		if booking.equal(network, hostname, port) {
 			return nil, fmt.Errorf("listener booking for %s, (%s, %s) - an overlaping listener is already booked for %s (%s, %s) - sharing is not allowed", bookerInfo.Tag(), network, address, booking.booker.Tag(), booking.protocol, net.JoinHostPort(booking.hostname, booking.port))
 		}
 	}
@@ -175,8 +175,8 @@ func (l *Distributor) BookListener(network string, address string, bookerInfo Bo
 		if reuse != nil {
 			ntw := (*reuse.allocated).Addr().Network()
 			host, port, _ := net.SplitHostPort((*reuse.allocated).Addr().String())
-			if toBook.isSame(ntw, host, port) {
-				if reuse.isSame(network, hostname, port) && reuse.allocated != nil {
+			if toBook.equal(ntw, host, port) {
+				if reuse.equal(network, hostname, port) && reuse.allocated != nil {
 					// check that we reuse for the same family of Booker (same Tag)
 					if reuse.booker.Tag() != bookerInfo.Tag() {
 						return nil, fmt.Errorf("listener booking for %s, (%s, %s) - an overlaping listener is already in use for %s (%s, %s)", bookerInfo.Tag(), network, address, reuse.booker.Tag(), reuse.protocol, net.JoinHostPort(reuse.hostname, reuse.port))
