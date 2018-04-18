@@ -71,9 +71,13 @@ func TestReadme(t *testing.T) {
 		for _, in := range inputs {
 			dnsserver.Port = strconv.Itoa(port)
 			server, err := caddy.Start(in)
+			// Execute after startup events, mandatory for a full started service
+			caddy.EmitEvent(caddy.InstanceStartupEvent, server)
+
 			if err != nil {
 				t.Errorf("Failed to start server with %s, for input %q:\n%s", readme, err, in.Body())
 			}
+			server.ShutdownCallbacks()
 			server.Stop()
 			port++
 		}
