@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/coredns/coredns/plugin/pkg/listener"
-
 	"github.com/coredns/coredns/plugin/pkg/log"
 )
 
