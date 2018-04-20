@@ -28,8 +28,9 @@ type booking struct {
 // TODO: manage properly the difference between localhost/"" and Ipv4 or Ipv6
 var (
 	sameIPList = [][]string{
-		{"127.0.0.1", "localhost", ""},
-		{"::1", "localhost", ""},
+		{"0.0.0.0", "::", ""},
+		{"127.0.0.1", "localhost"},
+		{"::1", "localhost"},
 	}
 )
 
@@ -176,19 +177,17 @@ func (l *Distributor) BookListener(network string, address string, bookerInfo Bo
 			ntw := (*reuse.allocated).Addr().Network()
 			host, port, _ := net.SplitHostPort((*reuse.allocated).Addr().String())
 			if toBook.equal(ntw, host, port) {
-				if reuse.equal(network, hostname, port) && reuse.allocated != nil {
-					// check that we reuse for the same family of Booker (same Tag)
-					if reuse.booker.Tag() != bookerInfo.Tag() {
-						return nil, fmt.Errorf("listener booking for %s, (%s, %s) - an overlaping listener is already in use for %s (%s, %s)", bookerInfo.Tag(), network, address, reuse.booker.Tag(), reuse.protocol, net.JoinHostPort(reuse.hostname, reuse.port))
-					}
-					if !allowReuse {
-						return nil, fmt.Errorf("listener booking for %s, (%s, %s) - this listener is already in use, and re-use is not allowed", bookerInfo.Tag(), network, address)
-					}
-					toBook.reusable = reuse.allocated
-					// We prevent to reuse a second time - although the test on booking should also prevent it
-					l.reusable[r] = nil
-					break
+				// check that we reuse for the same family of Booker (same Tag)
+				if reuse.booker.Tag() != bookerInfo.Tag() {
+					return nil, fmt.Errorf("listener booking for %s, (%s, %s) - an overlaping listener is already in use for %s (%s, %s)", bookerInfo.Tag(), network, address, reuse.booker.Tag(), reuse.protocol, net.JoinHostPort(reuse.hostname, reuse.port))
 				}
+				if !allowReuse {
+					return nil, fmt.Errorf("listener booking for %s, (%s, %s) - this listener is already in use, and re-use is not allowed", bookerInfo.Tag(), network, address)
+				}
+				toBook.reusable = reuse.allocated
+				// We prevent to reuse a second time - although the test on booking should also prevent it
+				l.reusable[r] = nil
+				break
 			}
 		}
 	}
