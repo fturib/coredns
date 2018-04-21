@@ -5,11 +5,11 @@ import (
 )
 
 type booker struct {
-	tag string
+	name string
 }
 
-func (b booker) Tag() string {
-	return b.tag
+func (b booker) Name() string {
+	return b.name
 }
 
 func TestProviderSimpleBooking(t *testing.T) {
@@ -21,7 +21,7 @@ func TestProviderSimpleBooking(t *testing.T) {
 
 	// Dry-run mode
 
-	booker := booker{tag: "sample"}
+	booker := booker{name: "sample"}
 	dist := NewListenerDistributor(nil)
 	alloc, err := dist.BookListener("tcp", "127.0.0.1:4010", booker, false)
 	if err != nil {

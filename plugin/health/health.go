@@ -34,7 +34,7 @@ func newHealth(alloc listener.AllocationToken) *health {
 	return &health{alloc: alloc, stop: make(chan bool), pollstop: make(chan bool)}
 }
 
-func (h *health) Tag() string {
+func (h *health) Name() string {
 	return "health"
 }
 

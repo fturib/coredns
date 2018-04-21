@@ -111,7 +111,7 @@ func newListener(alloc listener.AllocationToken) *metricsListener {
 	return met
 }
 
-func (m *metricsListener) Tag() string { return "prometheus" }
+func (m *metricsListener) Name() string { return "prometheus" }
 
 // MustRegister wraps m.Reg.MustRegister.
 func (m *metricsListener) MustRegister(c prometheus.Collector) { m.Reg.MustRegister(c) }

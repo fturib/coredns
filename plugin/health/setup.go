@@ -33,7 +33,7 @@ func setup(c *caddy.Controller) error {
 	if booked {
 		x, ok := booker.(*health)
 		if !ok {
-			return plugin.Error("health", fmt.Errorf("the address (%s) for listening is already booked by %s (and is not recognized as prometheus)", addr, booker.Tag()))
+			return plugin.Error("health", fmt.Errorf("the address (%s) for listening is already booked by %s (and is not recognized as prometheus)", addr, booker.Name()))
 		}
 		// we consolidate the health plugin on that existing health plugin
 		h = x

@@ -31,7 +31,7 @@ func setup(c *caddy.Controller) error {
 	if booked {
 		x, ok := booker.(*metricsListener)
 		if !ok {
-			return plugin.Error("prometheus", fmt.Errorf("the address (%s) for listening is already booked by %s (and is not recognized as prometheus)", addr, booker.Tag()))
+			return plugin.Error("prometheus", fmt.Errorf("the address (%s) for listening is already booked by %s (and is not recognized as prometheus)", addr, booker.Name()))
 		}
 		mlsn = x
 	} else {

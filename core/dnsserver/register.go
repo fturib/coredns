@@ -37,25 +37,33 @@ func init() {
 }
 
 func caddyEventListeners(event caddy.EventName, info interface{}) error {
-	if event != caddy.InstanceStartupEvent {
-		return nil
-	}
 
-	// a context can be considered "active" only after all servers/services are started.
-	// the only way to spot that context is to consider its instance pointer against the current instance.
-	instance := info.(*caddy.Instance)
-	changed := false
-	for _, ctxt := range allContext {
-		if ctxt.instance == instance {
-			activeContext = ctxt
-			changed = true
-		}
-	}
-	if changed {
-		// at this point we need only to keep the current active context. Others are obsoleted
-		// NOTE: would be good to ensure final shutdown all services on obsolete contexts
+	switch event {
+	case caddy.StartupEvent:
+		fallthrough
+	case caddy.ShutdownEvent:
+		// at first startut or at complete shutdown of coreDNS. Cleanup context
+		// this is needed when you start any Server AFTER a Stop - no need to be the same server
+		// used during tests.
 		allContext = make([]*dnsContext, 0)
-		allContext = append(allContext, activeContext)
+		activeContext = nil
+	case caddy.InstanceStartupEvent:
+		// a context can be considered "active" only after all servers/services are started.
+		// the only way to spot that context is to consider its instance pointer against the current instance.
+		instance := info.(*caddy.Instance)
+		changed := false
+		for _, ctxt := range allContext {
+			if ctxt.instance == instance {
+				activeContext = ctxt
+				changed = true
+			}
+		}
+		if changed {
+			// at this point we need only to keep the current active context. Others are obsoleted
+			// NOTE: would be good to ensure final shutdown all services on obsolete contexts
+			allContext = make([]*dnsContext, 0)
+			allContext = append(allContext, activeContext)
+		}
 	}
 	return nil
 }

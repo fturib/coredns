@@ -66,7 +66,7 @@ example.com:0 {
 func getCurrentListeningAddress(key string) string {
 	var listenAddr = ""
 	for _, v := range dnsserver.GetActiveListenerDistributor().Bookings(key) {
-		listenAddr = (*v).Addr().String()
+		listenAddr = v.Addr().String()
 	}
 	return listenAddr
 }
