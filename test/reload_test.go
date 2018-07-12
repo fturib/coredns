@@ -119,11 +119,13 @@ func TestReloadMetricsHealth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const proc = "process_virtual_memory_bytes"
-	metrics, _ := ioutil.ReadAll(resp.Body)
-	if !bytes.Contains(metrics, []byte(proc)) {
-		t.Errorf("Failed to see %s in metric output", proc)
+
+	// verify Metrics is running
+	err = collectMetricsInfo("localhost:53183")
+	if err != nil {
+		t.Errorf("Prometheus is not listening : %s", err)
 	}
+
 }
 
 func collectMetricsInfo(addr string) error {
@@ -143,7 +145,8 @@ func collectMetricsInfo(addr string) error {
 // Because of behavior of default HttServer. This Test will work ONLY if metrics HTTP Server is closed with a shutdown
 // (a close will not completely end the service)
 func TestReloadSeveralTimeMetrics(t *testing.T) {
-	promAddress := "127.0.0.1:53183"
+	//TODO: add a tool that find an available port.
+	promAddress := "127.0.0.1:53185" // need to be a port that is not used in another test ! not very convenient
 	corefilePrometheus := `
 .:0 {
 	prometheus ` + promAddress + `
