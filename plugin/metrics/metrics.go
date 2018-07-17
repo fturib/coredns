@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/metrics/vars"
@@ -87,18 +86,8 @@ func (m *Metrics) ZoneNames() []string {
 func (m *Metrics) OnStartup() error {
 	ln, err := net.Listen("tcp", m.Addr)
 	if err != nil {
-		log.Warningf("failed to start metrics handler on %s - error : %s", m.Addr, err)
-
-		// on some OS (Alpine) the listener seems reating the socekt a few delay after the closing the listener.
-		// in case of restart of server, it needs to delay a little but the opening of a new listener on the same address:port
-		time.Sleep(1 * time.Second)
-		ln, err = net.Listen("tcp", m.Addr)
-		if err != nil {
-			// complete fail to listen
-			log.Errorf("failed to start metrics handler second time (one sec delay): %s", err)
-			return err
-		}
-		log.Infof("eventually succeeded to start metrics handler on %s", err)
+		log.Errorf("Failed to start metrics handler: %s", err)
+		return err
 	}
 
 	m.ln = ln
