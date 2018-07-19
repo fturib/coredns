@@ -8,7 +8,7 @@ import (
 
 // U keeps track of item to be done.
 type U struct {
-	sync.Mutex
+	sync.RWMutex
 	u map[string]item
 }
 
@@ -31,18 +31,6 @@ func (u *U) Set(key string, f func() error) {
 	u.u[key] = item{todo, f}
 }
 
-// SetTodo sets key to 'todo' again.
-func (u *U) SetTodo(key string) {
-	u.Lock()
-	defer u.Unlock()
-	v, ok := u.u[key]
-	if !ok {
-		return
-	}
-	v.state = todo
-	u.u[key] = v
-}
-
 // ForEach iterates for u executes f for each element that is 'todo' and sets it to 'done' - if f executes w/o error
 func (u *U) ForEach() error {
 	u.Lock()
@@ -61,8 +49,8 @@ func (u *U) ForEach() error {
 
 // HasTodo inform on weather some things are still in todo mode
 func (u *U) HasTodo() bool {
-	u.Lock()
-	defer u.Unlock()
+	u.RLock()
+	defer u.RUnlock()
 	for _, v := range u.u {
 		if v.state == todo {
 			return true
