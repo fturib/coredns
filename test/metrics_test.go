@@ -1,11 +1,7 @@
 package test
 
 import (
-	"fmt"
 	"io/ioutil"
-	"log"
-	"net"
-	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -151,8 +147,6 @@ func TestMetricsAuto(t *testing.T) {
 		t.Fatalf("Could not get UDP listening port")
 	}
 	defer i.Stop()
-
-	log.SetOutput(ioutil.Discard)
 
 	// Write db.example.org to get example.org.
 	if err = ioutil.WriteFile(path.Join(tmpdir, "db.example.org"), []byte(zoneContent), 0644); err != nil {
