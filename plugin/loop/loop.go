@@ -4,9 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/coredns/coredns/request"
+
 	"github.com/coredns/coredns/plugin"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
-	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
@@ -17,7 +18,6 @@ var log = clog.NewWithPlugin("loop")
 type Loop struct {
 	Next plugin.Handler
 
-	zone  string
 	qname string
 
 	sync.RWMutex
@@ -26,7 +26,7 @@ type Loop struct {
 }
 
 // New returns a new initialized Loop.
-func New(zone string) *Loop { return &Loop{zone: zone, qname: qname(zone)} }
+func New(zone string) *Loop { return &Loop{qname: qname(zone)} }
 
 // ServeDNS implements the plugin.Handler interface.
 func (l *Loop) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
@@ -36,18 +36,12 @@ func (l *Loop) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (
 	if l.disabled() {
 		return plugin.NextOrFailure(l.Name(), l.Next, ctx, w, r)
 	}
-
 	state := request.Request{W: w, Req: r}
-
-	zone := plugin.Zones([]string{l.zone}).Matches(state.Name())
-	if zone == "" {
+	if state.Name() != l.qname {
 		return plugin.NextOrFailure(l.Name(), l.Next, ctx, w, r)
 	}
 
-	if state.Name() == l.qname {
-		l.inc()
-	}
-
+	l.inc()
 	if l.seen() > 2 {
 		log.Fatalf("Seen \"HINFO IN %s\" more than twice, loop detected", l.qname)
 	}

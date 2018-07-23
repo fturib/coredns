@@ -37,22 +37,18 @@ func setup(c *caddy.Controller) error {
 		go func() {
 			deadline := time.Now().Add(30 * time.Second)
 			conf := dnsserver.GetConfig(c)
-			lh := conf.ListenHosts[0]
-			addr := net.JoinHostPort(lh, conf.Port)
 
 			for time.Now().Before(deadline) {
-				if _, err := l.exchange(addr); err != nil {
-					time.Sleep(1 * time.Second)
-					continue
+				lh := conf.ListenHosts[0]
+				addr := net.JoinHostPort(lh, conf.Port)
+				if _, err := l.exchange(addr); err == nil {
+					// we are good the query is sent
+					break
 				}
-
-				go func() {
-					time.Sleep(2 * time.Second)
-					l.setDisabled()
-				}()
-
-				break
+				time.Sleep(1 * time.Second)
 			}
+			// the loop detection should have happen during process of the single query,
+			// or then is no loop : we can disable the mechanism
 			l.setDisabled()
 		}()
 		return nil
@@ -73,8 +69,8 @@ func parse(c *caddy.Controller) (*Loop, error) {
 			return nil, c.ArgErr()
 		}
 
-		if len(c.ServerBlockKeys) > 0 {
-			zone = plugin.Host(c.ServerBlockKeys[0]).Normalize()
+		if len(c.Key) > 0 {
+			zone = plugin.Host(c.Key).Normalize()
 		}
 	}
 	return New(zone), nil
