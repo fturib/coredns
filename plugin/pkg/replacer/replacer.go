@@ -39,10 +39,10 @@ func New(ctx context.Context, r *dns.Msg, rr *dnstest.Recorder, emptyValue strin
 	rep := replacer{
 		ctx: ctx,
 		replacements: map[string]string{
-			"{type}":  req.Type(),
-			"{name}":  req.Name(),
-			"{class}": req.Class(),
-			"{proto}": req.Proto(),
+			"{type}":   req.Type(),
+			"{name}":   req.Name(),
+			"{class}":  req.Class(),
+			"{proto}":  req.Proto(),
 			"{when}":   "", // made a noop
 			"{size}":   strconv.Itoa(req.Len()),
 			"{remote}": addrToRFC3986(req.IP()),
