@@ -43,10 +43,10 @@ func TestSetup(t *testing.T) {
 				allow true
 				opa policy parameter
 				themis whatever parameter to themis
- 				name-of-plugin name-of-policy paramA paramB paramC 
+ 				name-of-plugin name-of-policy paramA paramB paramC
 			}`, false, 4, 0},
 		{`firewall query {
- 				name-of-plugin-error-if-no-policy-name 
+ 				name-of-plugin-error-if-no-policy-name
 			}`, true, 1, 0},
 	}
 	for i, test := range tests {
