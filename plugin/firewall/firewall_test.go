@@ -31,8 +31,8 @@ func ProcessHandler(rcode int, err error) plugin.Handler {
 func TestFirewallResolution(t *testing.T) {
 
 	tests := []struct {
-		queryFilter    byte
-		replyFilter    byte
+		queryFilter    int
+		replyFilter    int
 		nextHanlerCode int
 		resultCode     int
 		msgCode        int
@@ -52,7 +52,7 @@ func TestFirewallResolution(t *testing.T) {
 	for i, tc := range tests {
 
 		// prepare firewall parameters
-		fw, _ := new()
+		fw, _ := New()
 		fw.query.defaultPolicy = tc.queryFilter
 		fw.reply.defaultPolicy = tc.replyFilter
 		fw.next = ProcessHandler(tc.nextHanlerCode, nil)

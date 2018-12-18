@@ -52,7 +52,7 @@ func setup(c *caddy.Controller) error {
 }
 
 func parse(c *caddy.Controller) (*firewall, error) {
-	p, err := new()
+	p, err := New()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create the firewall plugin structure, error : %e", err)
 	}

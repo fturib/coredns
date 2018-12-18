@@ -50,7 +50,7 @@ type Rule interface {
 	// Evaluate the rule and return one of the TypeXXX defined above
 	//   - TypeNone should be returned if the Rule is not able to decide any action for this query
 	//   - otherwise return one of TypeAllow/TypeRefuse/TypeDrop/TypeBlock
-	Evaluate(data interface{}) (byte, error)
+	Evaluate(data interface{}) (int, error)
 }
 
 // Engine for Firewall plugin

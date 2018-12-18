@@ -29,7 +29,8 @@ type firewall struct {
 	next plugin.Handler
 }
 
-func new() (*firewall, error) {
+//New build a new firewall plugin
+func New() (*firewall, error) {
 	pol := &firewall{engines: map[string]policy.Engine{"--default--": policy.NewExpressionEngine()}}
 	var err error
 	if pol.query, err = newRuleList(policy.TypeBlock, false); err != nil {

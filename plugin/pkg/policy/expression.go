@@ -13,15 +13,15 @@ import (
 )
 
 type policyRuleExpression struct {
-	kind        byte
-	kindIfError byte
+	kind        int
+	kindIfError int
 	expression  *expr.EvaluableExpression
 }
 
 // ExpressionEngine implement interface Engine for Firewall plugin
 // it evaluate the rues using an the lib Knetic/govaluate
 type ExpressionEngine struct {
-	kindIfErrorEvaluation byte
+	kindIfErrorEvaluation int
 	dataFromReq           *RequestExtractorMapping
 }
 
@@ -56,10 +56,10 @@ func (x *ExpressionEngine) BuildRule(args []string) (Rule, error) {
 		return nil, fmt.Errorf("cannot create a valid expression : %s", err)
 	}
 
-	var kind = byte(TypeNone)
+	var kind = TypeNone
 	for k, n := range NameTypes {
 		if keyword == n {
-			kind = byte(k)
+			kind = k
 		}
 	}
 	if kind == TypeNone {
@@ -82,7 +82,7 @@ func toBoolean(v interface{}) (bool, error) {
 }
 
 //Evaluate the current expression, using data as a variable resolver for Expression
-func (r *policyRuleExpression) Evaluate(data interface{}) (byte, error) {
+func (r *policyRuleExpression) Evaluate(data interface{}) (int, error) {
 
 	params, ok := data.(*dataAsParam)
 	if !ok {

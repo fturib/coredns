@@ -18,10 +18,10 @@ import (
 
 type RuleStubEngine struct {
 	error  error
-	result byte
+	result int
 }
 
-func (r *RuleStubEngine) Evaluate(data interface{}) (byte, error) {
+func (r *RuleStubEngine) Evaluate(data interface{}) (int, error) {
 	return r.result, r.error
 }
 
@@ -55,7 +55,7 @@ func (e *StubEngine) BuildRule(args []string) (policy.Rule, error) {
 		if errconv != nil {
 			err = fmt.Errorf("rule from %s, evalute as an error : %s", e.name, args[0])
 		} else {
-			r = byte(v)
+			r = v
 		}
 	}
 	return &RuleStubEngine{err, r}, nil
@@ -115,7 +115,7 @@ func TestEvaluate(t *testing.T) {
 	tests := []struct {
 		rules []*ruleElement
 		error bool
-		value byte
+		value int
 	}{
 
 		// error at query data

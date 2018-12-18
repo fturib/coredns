@@ -19,10 +19,10 @@ type ruleElement struct {
 type ruleList struct {
 	reply         bool
 	ruleList      []*ruleElement
-	defaultPolicy byte
+	defaultPolicy int
 }
 
-func newRuleList(ifNoResult byte, isReply bool) (*ruleList, error) {
+func newRuleList(ifNoResult int, isReply bool) (*ruleList, error) {
 	if ifNoResult >= policy.TypeCount {
 		return nil, fmt.Errorf("invalid default rulelist parameters: %v", ifNoResult)
 	}
@@ -82,7 +82,7 @@ func (p *ruleList) ensureReplyData(ctx context.Context, name string, state reque
 	return nil, fmt.Errorf("unregistered engine instance %s", name)
 }
 
-func (p *ruleList) evaluate(ctx context.Context, state request.Request, data map[string]interface{}, engines map[string]policy.Engine) (byte, error) {
+func (p *ruleList) evaluate(ctx context.Context, state request.Request, data map[string]interface{}, engines map[string]policy.Engine) (int, error) {
 	// evaluate all policy one by one until one provide a valid result
 	// else return the defaultPolicy value
 	var dataReply = make(map[string]interface{}, 0)
