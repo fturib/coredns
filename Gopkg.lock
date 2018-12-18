@@ -22,6 +22,14 @@
   version = "v0.6.1"
 
 [[projects]]
+  digest = "1:a8bc08e25d94bdcbf8ea54ee8e4b2a00a8c3b6957501b4fdb1a6d303e5292f6d"
+  name = "github.com/Knetic/govaluate"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d216395917cc49052c7c7094cf57f09657ca08a8"
+  version = "v3.0.0"
+
+[[projects]]
   digest = "1:9c883d2e7fd391fbc7db7536863cc4cd181a97646b4659e9a7e7aa583c411885"
   name = "github.com/Shopify/sarama"
   packages = ["."]
@@ -816,6 +824,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/DataDog/dd-trace-go/opentracing",
+    "github.com/Knetic/govaluate",
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/credentials",
     "github.com/aws/aws-sdk-go/aws/request",
