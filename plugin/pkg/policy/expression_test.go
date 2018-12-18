@@ -8,6 +8,7 @@ import (
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	tst "github.com/coredns/coredns/plugin/test"
 	"github.com/coredns/coredns/request"
+
 	"github.com/miekg/dns"
 )
 
@@ -35,7 +36,6 @@ func TestBuildRule(t *testing.T) {
 		if test.errorBuild {
 			t.Errorf("Test %d : no error at BuilRule returned, when one was expected", i)
 		}
-
 	}
 }
 

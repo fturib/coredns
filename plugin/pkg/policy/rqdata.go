@@ -22,7 +22,7 @@ type RequestExtractorMapping struct {
 	emptyValue   string
 }
 
-// RequestDataExtractor implements a GetValue(name) (value, valid) function
+// RequestDataExtractor implements a Value(name) (value, valid) function
 // which allow to extract data from an existing DNS Request(or state)
 type RequestDataExtractor struct {
 	state     request.Request
@@ -108,7 +108,7 @@ func NewRequestExtractorMapping(emptyValue string) *RequestExtractorMapping {
 			return addrToRFC3986(state.LocalPort())
 		},
 		"response_ip": func(state request.Request) string {
-			ip := getRespIP(state.Req)
+			ip := respIP(state.Req)
 			if ip != nil {
 				return addrToRFC3986(ip.String())
 			}
@@ -118,10 +118,10 @@ func NewRequestExtractorMapping(emptyValue string) *RequestExtractorMapping {
 	return &RequestExtractorMapping{replacements, emptyValue}
 }
 
-// GetValue extract the data that is mapped to this name and return the corresponding value as a string
+// Value extract the data that is mapped to this name and return the corresponding value as a string
 // if that value is empty then the defaultValue is returned
 // Second parameter is a boolean that inform if the name itself is supported in the mapping
-func (rd *RequestDataExtractor) GetValue(name string) (string, bool) {
+func (rd *RequestDataExtractor) Value(name string) (string, bool) {
 	f, ok := rd.requester.replacements[name]
 	if ok {
 		v := f(rd.state)
@@ -190,8 +190,8 @@ func addrToRFC3986(addr string) string {
 	return addr
 }
 
-// getRespIP return the first A or AAAA records found in the Answer of the DNS msg
-func getRespIP(r *dns.Msg) net.IP {
+// respIP return the first A or AAAA records found in the Answer of the DNS msg
+func respIP(r *dns.Msg) net.IP {
 	if r == nil {
 		return nil
 	}

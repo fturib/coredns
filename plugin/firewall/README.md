@@ -47,17 +47,17 @@ Exemples of expression using the usual metadata:
 
 NOTE: because of the `/` separator included in a label of metadata, those labels must be enclosed on bracket [...] for a correct evaluation by the expression engine
 
-The following names are supported for qyer information
+The following names are supported for querying information
 
-* `type`: qtype of the request
-* `name`: qname of the request
-* `class`: qclass of the request
+* `type`: type of the request (A, AAAA, TXT, ..)
+* `name`: name of the request (the domain requested)
+* `class`: class of the request (IN, CS, CH, ...)
 * `proto`: protocol used (tcp or udp)
 * `remote`: client's IP address, for IPv6 addresses these are enclosed in brackets: `[::1]`
 * `size`: request size in bytes
 * `port`: client's port
 * `duration`: response duration
-* `rcode`: response RCODE
+* `rcode`: response CODE (NOERROR, NXDOMAIN, SERVFAIL, ...)
 * `rsize`: raw (uncompressed), response size (a client may receive a smaller response)
 * `>rflags`: response flags, each set flag will be displayed, e.g. "aa, tc". This includes the qr
   bit as well
@@ -87,9 +87,7 @@ example.org {
 ~~~
 
 
-WARNING: following corefile description expect that metadata plugin know ensure definition of EDNS0 data
-
-Define the metadata `group_id` and `client_id` based on the content of OPT records (EDNS0)
+Define the metadata labels `group_id` and `client_id` based on the content of OPT records (EDNS0)
 and use those values to filter the DNS queries: any query that have not the group_id 123456789 AND that has not the client_id matching ABCDEF will be returned REFUSED
 Also filter the reply with disallowing IP returned within a specific regular expression.
 

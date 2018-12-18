@@ -6,14 +6,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/coredns/coredns/plugin/pkg/dnstest"
-
-	"github.com/coredns/coredns/plugin/pkg/policy"
-
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
-
+	"github.com/coredns/coredns/plugin/pkg/policy"
 	"github.com/coredns/coredns/request"
+
 	"github.com/miekg/dns"
 )
 
@@ -21,9 +19,9 @@ var (
 	errInvalidAction = errors.New("invalid action")
 )
 
-// firewallPlugin represents a plugin instance that can validate DNS
+// firewall represents a plugin instance that can validate DNS
 // requests and replies using rulelists on the query and/or on the reply
-type firewallPlugin struct {
+type firewall struct {
 	engines map[string]policy.Engine
 	query   *ruleList
 	reply   *ruleList
@@ -31,10 +29,8 @@ type firewallPlugin struct {
 	next plugin.Handler
 }
 
-func newFirewallPlugin() (*firewallPlugin, error) {
-	pol := &firewallPlugin{}
-	pol.engines = make(map[string]policy.Engine, 0)
-	pol.engines["--default--"] = policy.NewExpressionEngine()
+func new() (*firewall, error) {
+	pol := &firewall{engines: map[string]policy.Engine{"--default--": policy.NewExpressionEngine()}}
 	var err error
 	if pol.query, err = newRuleList(policy.TypeBlock, false); err != nil {
 		return nil, err
@@ -46,7 +42,7 @@ func newFirewallPlugin() (*firewallPlugin, error) {
 }
 
 // ServeDNS implements the Handler interface.
-func (p *firewallPlugin) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
+func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 	var (
 		status    = -1
 		respMsg   *dns.Msg
@@ -59,7 +55,7 @@ func (p *firewallPlugin) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *
 	// ask policy for the Query Rulelist
 	action, err := p.query.evaluate(ctx, state, queryData, p.engines)
 	if err != nil {
-		return p.buildDNSReply(dns.RcodeServerFailure, true, err, w, r)
+		return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
 	}
 
 	if action == policy.TypeAllow {
@@ -72,7 +68,7 @@ func (p *firewallPlugin) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *
 		// ask other plugins to resolve
 		_, err := plugin.NextOrFailure(p.Name(), p.next, ctx, recorder, r)
 		if err != nil {
-			return p.buildDNSReply(dns.RcodeServerFailure, true, err, w, r)
+			return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
 		}
 		respMsg = writer.Msg
 
@@ -81,7 +77,7 @@ func (p *firewallPlugin) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *
 		// whatever the response, send to the Reply RuleList for action
 		action, err = p.reply.evaluate(ctx, stateReply, queryData, p.engines)
 		if err != nil {
-			return p.buildDNSReply(dns.RcodeServerFailure, true, err, w, r)
+			return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
 		}
 	}
 
@@ -106,11 +102,11 @@ func (p *firewallPlugin) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *
 		status = dns.RcodeServerFailure
 		err = errInvalidAction
 	}
-	return p.buildDNSReply(status, false, err, w, r)
+	return p.buildReply(status, false, err, w, r)
 
 }
 
-func (p *firewallPlugin) buildDNSReply(status int, errorExec bool, err error, w dns.ResponseWriter, r *dns.Msg) (int, error) {
+func (p *firewall) buildReply(status int, errorExec bool, err error, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 
 	r.Rcode = status
 	r.Response = true
@@ -122,4 +118,4 @@ func (p *firewallPlugin) buildDNSReply(status int, errorExec bool, err error, w 
 }
 
 // Name implements the Handler interface
-func (p *firewallPlugin) Name() string { return "firewall" }
+func (p *firewall) Name() string { return "firewall" }

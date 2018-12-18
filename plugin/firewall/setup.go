@@ -20,7 +20,7 @@ func init() {
 }
 
 func setup(c *caddy.Controller) error {
-	fw, err := firewallParse(c)
+	fw, err := parse(c)
 
 	if err != nil {
 		return plugin.Error("firewall", err)
@@ -51,8 +51,8 @@ func setup(c *caddy.Controller) error {
 	return nil
 }
 
-func firewallParse(c *caddy.Controller) (*firewallPlugin, error) {
-	p, err := newFirewallPlugin()
+func parse(c *caddy.Controller) (*firewall, error) {
+	p, err := new()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create the firewall plugin structure, error : %e", err)
 	}
@@ -84,12 +84,10 @@ func firewallParse(c *caddy.Controller) (*firewallPlugin, error) {
 	return p, nil
 }
 
-func (p *firewallPlugin) parseOptionOrRule(c *caddy.Controller) (*ruleElement, error) {
+func (p *firewall) parseOptionOrRule(c *caddy.Controller) (*ruleElement, error) {
 	// by default, at least one engine is available : the ExpressionEngine
 	e := &policy.ExpressionEngine{}
 	switch c.Val() {
-	// check each possible option of the plugin
-
 	case policy.NameTypes[policy.TypeRefuse]:
 		fallthrough
 	case policy.NameTypes[policy.TypeAllow]:
@@ -97,7 +95,7 @@ func (p *firewallPlugin) parseOptionOrRule(c *caddy.Controller) (*ruleElement, e
 	case policy.NameTypes[policy.TypeBlock]:
 		fallthrough
 	case policy.NameTypes[policy.TypeDrop]:
-		// these 4 direct policy action denotes the default ExpressionEngine
+		// these 4 direct policy action denotes the actions for the default Engine: ExpressionEngine
 		action := c.Val()
 		name := "--default--"
 		args := c.RemainingArgs()
@@ -126,7 +124,7 @@ func (p *firewallPlugin) parseOptionOrRule(c *caddy.Controller) (*ruleElement, e
 	}
 }
 
-func (p *firewallPlugin) enrollEngines(c *caddy.Controller) error {
+func (p *firewall) enrollEngines(c *caddy.Controller) error {
 
 	var eng = make(map[string]map[string]string)
 	// build a Map of missing Engines needed to build all rules of the RuleLists
@@ -145,14 +143,14 @@ func (p *firewallPlugin) enrollEngines(c *caddy.Controller) error {
 		}
 	}
 
-	// retrieve all needed Engine.
+	// retrieve all needed Engines.
 	// These are plugins that implements the 'Engineer' interface
 	plugins := dnsserver.GetConfig(c).Handlers()
 	for _, pl := range plugins {
 		if e, ok := pl.(Engineer); ok {
 			if names, okn := eng[pl.Name()]; okn {
 				for n := range names {
-					re := e.GetEngine(n)
+					re := e.Engine(n)
 					if re == nil {
 						return c.Errf("missing policy engine for plugin %s and name %s", p.Name(), n)
 					}
@@ -164,15 +162,10 @@ func (p *firewallPlugin) enrollEngines(c *caddy.Controller) error {
 	}
 
 	// build a list of all engines not found
-	allnames := make([]string, 0)
-	for pln, names := range eng {
+	for _, names := range eng {
 		for n := range names {
-			allnames = append(allnames, pln+"/"+n)
+			return c.Errf("the policy engine %s is missing", n)
 		}
-	}
-	if len(allnames) > 0 {
-		// if some Engine is missing, then just stop CoreDNS load
-		return c.Errf("all these policy engine are missing : %s", strings.Join(allnames, ","))
 	}
 	return nil
 }

@@ -22,7 +22,6 @@ func buildExtractorOnSimpleMsg(mapping *RequestExtractorMapping) *RequestDataExt
 	state := request.Request{Req: r, W: w}
 
 	return &RequestDataExtractor{state, mapping}
-
 }
 
 func buildExtractorOnRepliedMsg(mapping *RequestExtractorMapping) *RequestDataExtractor {
@@ -62,7 +61,7 @@ func TestNewRequestData(t *testing.T) {
 
 	for i, tst := range tests {
 
-		d, ok := tst.extractor.GetValue(tst.name)
+		d, ok := tst.extractor.Value(tst.name)
 		if !ok {
 			if !tst.error {
 				t.Errorf("Test %d, name : %s : unexpected invalid name returned", i, tst.name)

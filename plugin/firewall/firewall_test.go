@@ -52,7 +52,7 @@ func TestFirewallResolution(t *testing.T) {
 	for i, tc := range tests {
 
 		// prepare firewall parameters
-		fw, _ := newFirewallPlugin()
+		fw, _ := new()
 		fw.query.defaultPolicy = tc.queryFilter
 		fw.reply.defaultPolicy = tc.replyFilter
 		fw.next = ProcessHandler(tc.nextHanlerCode, nil)

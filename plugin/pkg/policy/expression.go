@@ -106,7 +106,7 @@ func (r *policyRuleExpression) Evaluate(data interface{}) (byte, error) {
 // Get return the value associated with the variable
 // DataRequestExtractor is evaluated first, and if the name does not match then metadata is evaluated
 func (p *dataAsParam) Get(name string) (interface{}, error) {
-	v, exist := p.dataFromReq.GetValue(name)
+	v, exist := p.dataFromReq.Value(name)
 	if exist {
 		return v, nil
 	}

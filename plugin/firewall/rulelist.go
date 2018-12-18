@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/coredns/coredns/plugin/pkg/policy"
-
 	"github.com/coredns/coredns/request"
 )
 

@@ -7,15 +7,15 @@ import (
 )
 
 const (
-	// TypeNone a no value
-	TypeNone = byte(iota)
-	// TypeRefuse policy action is REFUSE (do not resolve a query and return rcode REFUSED)
+	// TypeNone policy action is UNKNOWN: no decision, apply the next rule.
+	TypeNone = iota
+	// TypeRefuse policy action is REFUSE: do not resolve a query and return code REFUSED
 	TypeRefuse
-	// TypeAllow policy action is ALLOW (continue to resolve query)
+	// TypeAllow policy action is ALLOW: continue to resolve query
 	TypeAllow
-	// TypeBlock policy action is BLOCK (do not resolve a query and return rcode NXDOMAIN)
+	// TypeBlock policy action is BLOCK: do not resolve a query and return code NXDOMAIN
 	TypeBlock
-	// TypeDrop policy action is DROP (do not resolve a query and simulate a lost query)
+	// TypeDrop policy action is DROP: do not resolve a query and simulate a lost query
 	TypeDrop
 
 	// TypeCount total number of actions allowed
@@ -46,26 +46,21 @@ func init() {
 }
 
 // Rule defines a policy for continuing DNS query processing.
-// data is provided by BuildQueryData or BuildReplyData - content or organization of the data is up to the Engine
-// Evaluate must return:
-//   - an error if the evaluation is invalid
-//   - nameTypeNone if this Rule cannot make a decision
-//   - one of the other TypeAllow/TypeRefuse/TypeDrop/TypeBlock otherwise
 type Rule interface {
+	// Evaluate the rule and return one of the TypeXXX defined above
+	//   - TypeNone should be returned if the Rule is not able to decide any action for this query
+	//   - otherwise return one of TypeAllow/TypeRefuse/TypeDrop/TypeBlock
 	Evaluate(data interface{}) (byte, error)
 }
 
-// Engine for Firewall plugin.
-// each Engine must be able to build rules (at setup time) base on one line of the corefile configuration
-// build at execution time some data extracted from context or query itself, needed to evaluate the rules builts.
+// Engine for Firewall plugin
 type Engine interface {
 	// BuildRules - create a Rule based on args or throw an error, This Rule will be evaluated during processing of DNS Queries
 	BuildRule(args []string) (Rule, error) // create a rule based on parameters
 
-	//Generate the data needed for the evaluation of ALL the rules of this Engine for a QueryData
-	//the function is called only once whatever the number of Rule that will be evaluated.
-	BuildQueryData(ctx context.Context, state request.Request) (interface{}, error) // create the right set of data needed for policy interpretation
+	//BuildQueryData generate the data needed to evaluate - for one query - ALL the rules of this Engine
+	BuildQueryData(ctx context.Context, state request.Request) (interface{}, error)
 
-	//Generate the data needed for the evaluation of ALL the rules of this Engine for a ReplyData
+	//BuildReplyData generate the data needed to evaluate - for one response - ALL the rules of this Engine
 	BuildReplyData(ctx context.Context, state request.Request, queryData interface{}) (interface{}, error)
 }
