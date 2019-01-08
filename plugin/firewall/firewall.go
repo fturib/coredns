@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/coredns/coredns/plugin/firewall/rule"
+
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
@@ -23,8 +25,8 @@ var (
 // requests and replies using rulelists on the query and/or on the reply
 type firewall struct {
 	engines map[string]policy.Engine
-	query   *ruleList
-	reply   *ruleList
+	query   *rule.List
+	reply   *rule.List
 
 	next plugin.Handler
 }
@@ -33,10 +35,10 @@ type firewall struct {
 func New() (*firewall, error) {
 	pol := &firewall{engines: map[string]policy.Engine{"--default--": policy.NewExpressionEngine()}}
 	var err error
-	if pol.query, err = newRuleList(policy.TypeBlock, false); err != nil {
+	if pol.query, err = rule.NewList(policy.TypeBlock, false); err != nil {
 		return nil, err
 	}
-	if pol.reply, err = newRuleList(policy.TypeAllow, true); err != nil {
+	if pol.reply, err = rule.NewList(policy.TypeAllow, true); err != nil {
 		return nil, err
 	}
 	return pol, nil
@@ -54,7 +56,7 @@ func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	state := request.Request{W: w, Req: r}
 
 	// ask policy for the Query Rulelist
-	action, err := p.query.evaluate(ctx, state, queryData, p.engines)
+	action, err := p.query.Evaluate(ctx, state, queryData, p.engines)
 	if err != nil {
 		return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
 	}
@@ -76,7 +78,7 @@ func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 		stateReply := request.Request{W: recorder, Req: respMsg}
 
 		// whatever the response, send to the Reply RuleList for action
-		action, err = p.reply.evaluate(ctx, stateReply, queryData, p.engines)
+		action, err = p.reply.Evaluate(ctx, stateReply, queryData, p.engines)
 		if err != nil {
 			return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
 		}

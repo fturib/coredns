@@ -31,12 +31,12 @@ func ProcessHandler(rcode int, err error) plugin.Handler {
 func TestFirewallResolution(t *testing.T) {
 
 	tests := []struct {
-		queryFilter    int
-		replyFilter    int
-		nextHanlerCode int
-		resultCode     int
-		msgCode        int
-		msgNil         bool
+		queryFilter int
+		replyFilter int
+		next        int
+		resultCode  int
+		msgCode     int
+		msgNil      bool
 	}{
 		// This all works because 1 bucket (1 zone, 1 type)
 		{policy.TypeDrop, policy.TypeAllow, dns.RcodeSuccess, dns.RcodeSuccess, dns.RcodeSuccess, true},
@@ -53,9 +53,9 @@ func TestFirewallResolution(t *testing.T) {
 
 		// prepare firewall parameters
 		fw, _ := New()
-		fw.query.defaultPolicy = tc.queryFilter
-		fw.reply.defaultPolicy = tc.replyFilter
-		fw.next = ProcessHandler(tc.nextHanlerCode, nil)
+		fw.query.DefaultPolicy = tc.queryFilter
+		fw.reply.DefaultPolicy = tc.replyFilter
+		fw.next = ProcessHandler(tc.next, nil)
 
 		//create a msg
 		req := new(dns.Msg)
