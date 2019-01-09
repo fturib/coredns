@@ -20,6 +20,9 @@ var (
 	errInvalidAction = errors.New("invalid action")
 )
 
+// ExpressionEngineName is the name associated with built-in rules of Expression type.
+const ExpressionEngineName = "--default--"
+
 // firewall represents a plugin instance that can validate DNS
 // requests and replies using rulelists on the query and/or on the reply
 type firewall struct {

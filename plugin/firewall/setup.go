@@ -78,7 +78,10 @@ func parse(c *caddy.Controller) (*firewall, error) {
 			if err != nil {
 				return nil, err
 			}
-			rl.Rules = append(rl.Rules, r)
+			err = rl.Add(r)
+			if err != nil {
+				return nil, c.Errf("cannot add a rule to the %s list : %s", location, err)
+			}
 		}
 	}
 	return p, nil
@@ -97,7 +100,7 @@ func (p *firewall) parseOptionOrRule(c *caddy.Controller) (*rule.Element, error)
 	case policy.NameTypes[policy.TypeDrop]:
 		// these 4 direct policy action denotes the actions for the default Engine: ExpressionEngine
 		action := c.Val()
-		name := "--default--"
+		name := ExpressionEngineName
 		args := c.RemainingArgs()
 		if len(args) < 1 {
 			return nil, fmt.Errorf("not enough arguments to build a policy rule, expect allow/refuse/block/drop query/reply <expression>, got %s %s", c.Val(), strings.Join(args, " "))
@@ -126,46 +129,34 @@ func (p *firewall) parseOptionOrRule(c *caddy.Controller) (*rule.Element, error)
 
 func (p *firewall) enrollEngines(c *caddy.Controller) error {
 
-	var eng = make(map[string]map[string]string)
-	// build a Map of missing Engines needed to build all rules of the RuleLists
-	for _, loc := range []*rule.List{p.query, p.reply} {
-		for _, re := range loc.Rules {
-			if _, ok := p.engines[re.Name]; !ok {
-				names, ok := eng[re.Plugin]
-				if !ok {
-					names = make(map[string]string)
-					eng[re.Plugin] = names
-				}
-				if _, ok := names[re.Name]; !ok {
-					names[re.Name] = re.Name
-				}
-			}
-		}
+	var eng = p.query.Engines()
+	for n, p := range p.reply.Engines() {
+		eng[n] = p
 	}
+	// remove Expression engine that is built-in
+	delete(eng, ExpressionEngineName)
 
 	// retrieve all needed Engines.
-	// These are plugins that implements the 'Engineer' interface
+	// These are plugins that implements the 'Engineer' interface and are named in one of the firewall lists
 	plugins := dnsserver.GetConfig(c).Handlers()
 	for _, pl := range plugins {
 		if e, ok := pl.(policy.Engineer); ok {
-			if names, okn := eng[pl.Name()]; okn {
-				for n := range names {
+			for n, pn := range eng {
+				if pn == pl.Name() {
 					re := e.Engine(n)
 					if re == nil {
 						return c.Errf("missing policy engine for plugin %s and name %s", p.Name(), n)
 					}
 					p.engines[n] = re
-					delete(names, n)
+					delete(eng, n)
 				}
 			}
 		}
 	}
 
-	// build a list of all engines not found
-	for _, names := range eng {
-		for n := range names {
-			return c.Errf("the policy engine %s is missing", n)
-		}
+	// raise error for engines referenced in the list but not present in the Corefile as plugin
+	for n := range eng {
+		return c.Errf("the policy engine %s is missing", n)
 	}
 	return nil
 }

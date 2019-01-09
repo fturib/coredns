@@ -32,6 +32,29 @@ func NewList(ifNoResult int, isReply bool) (*List, error) {
 	return &List{Reply: isReply, DefaultPolicy: ifNoResult}, nil
 }
 
+//Add the element at end of the list
+func (p *List) Add(e *Element) error {
+	// verify that if any other Element has already the same name, it also has the same plugin
+	for _, ex := range p.Rules {
+		if ex.Name == e.Name {
+			if ex.Plugin != e.Plugin {
+				return fmt.Errorf("the Engine name '%s' is used by two different plugins: %s and %s", e.Name, e.Plugin, ex.Plugin)
+			}
+		}
+	}
+	p.Rules = append(p.Rules, e)
+	return nil
+}
+
+//Engines list all engines involved - return map[name] -> plugin
+func (p *List) Engines() map[string]string {
+	eng := make(map[string]string, len(p.Rules))
+	for _, re := range p.Rules {
+		eng[re.Name] = re.Plugin
+	}
+	return eng
+}
+
 //BuildRules ensure that each Elements of the List have a real built policy Rule
 func (p *List) BuildRules(engines map[string]policy.Engine) error {
 	var err error
