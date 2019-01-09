@@ -6,12 +6,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/coredns/coredns/plugin/firewall/rule"
-
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/firewall/policy"
+	"github.com/coredns/coredns/plugin/firewall/rule"
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
-	"github.com/coredns/coredns/plugin/pkg/policy"
 	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
@@ -33,7 +32,7 @@ type firewall struct {
 
 //New build a new firewall plugin
 func New() (*firewall, error) {
-	pol := &firewall{engines: map[string]policy.Engine{"--default--": policy.NewExpressionEngine()}}
+	pol := &firewall{engines: map[string]policy.Engine{"--default--": policy.NewExprEngine()}}
 	var err error
 	if pol.query, err = rule.NewList(policy.TypeBlock, false); err != nil {
 		return nil, err

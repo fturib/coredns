@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/coredns/coredns/plugin/pkg/rqdata"
+
 	"github.com/coredns/coredns/request"
 
 	"github.com/coredns/coredns/plugin/metadata"
@@ -12,43 +14,43 @@ import (
 	expr "github.com/Knetic/govaluate"
 )
 
-type policyRuleExpression struct {
+type ruleExpr struct {
 	kind        int
 	kindIfError int
 	expression  *expr.EvaluableExpression
 }
 
-// ExpressionEngine implement interface Engine for Firewall plugin
+// ExprEngine implement interface Engine for Firewall plugin
 // it evaluate the rues using an the lib Knetic/govaluate
-type ExpressionEngine struct {
+type ExprEngine struct {
 	kindIfErrorEvaluation int
-	dataFromReq           *RequestExtractorMapping
+	dataFromReq           *rqdata.Mapping
 }
 
 type dataAsParam struct {
 	ctx         context.Context
-	dataFromReq *RequestDataExtractor
+	dataFromReq *rqdata.Extractor
 }
 
-// NewExpressionEngine create a new Engine with default configuration
-func NewExpressionEngine() *ExpressionEngine {
-	return &ExpressionEngine{TypeRefuse, NewRequestExtractorMapping("")}
+// NewExprEngine create a new Engine with default configuration
+func NewExprEngine() *ExprEngine {
+	return &ExprEngine{TypeRefuse, rqdata.NewMapping("")}
 }
 
 //BuildQueryData here return a dataAsParam that can be used by to evaluate the variables of the expression
-func (x *ExpressionEngine) BuildQueryData(ctx context.Context, state request.Request) (interface{}, error) {
-	return &dataAsParam{ctx, &RequestDataExtractor{state, x.dataFromReq}}, nil
+func (x *ExprEngine) BuildQueryData(ctx context.Context, state request.Request) (interface{}, error) {
+	return &dataAsParam{ctx, rqdata.NewExtractor(state, x.dataFromReq)}, nil
 }
 
 //BuildReplyData here return a dataAsParam that can be used by to evaluate the variables of the expression
-func (x *ExpressionEngine) BuildReplyData(ctx context.Context, state request.Request, query interface{}) (interface{}, error) {
-	return &dataAsParam{ctx, &RequestDataExtractor{state, x.dataFromReq}}, nil
+func (x *ExprEngine) BuildReplyData(ctx context.Context, state request.Request, query interface{}) (interface{}, error) {
+	return &dataAsParam{ctx, rqdata.NewExtractor(state, x.dataFromReq)}, nil
 }
 
 //BuildRule create a rule for Expression Engine:
 // - first param is one of the action to return
 // - second and following param is a sentence the represent an Expression
-func (x *ExpressionEngine) BuildRule(args []string) (Rule, error) {
+func (x *ExprEngine) BuildRule(args []string) (Rule, error) {
 	keyword := args[0]
 	exp := args[1:]
 	e, err := expr.NewEvaluableExpression(strings.Join(exp, " "))
@@ -65,7 +67,7 @@ func (x *ExpressionEngine) BuildRule(args []string) (Rule, error) {
 	if kind == TypeNone {
 		return nil, fmt.Errorf("invalid keyword %s for a policy rule", keyword)
 	}
-	return &policyRuleExpression{kind, x.kindIfErrorEvaluation, e}, nil
+	return &ruleExpr{kind, x.kindIfErrorEvaluation, e}, nil
 }
 
 func toBoolean(v interface{}) (bool, error) {
@@ -82,7 +84,7 @@ func toBoolean(v interface{}) (bool, error) {
 }
 
 //Evaluate the current expression, using data as a variable resolver for Expression
-func (r *policyRuleExpression) Evaluate(data interface{}) (int, error) {
+func (r *ruleExpr) Evaluate(data interface{}) (int, error) {
 
 	params, ok := data.(*dataAsParam)
 	if !ok {

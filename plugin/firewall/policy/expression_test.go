@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
+	"github.com/coredns/coredns/plugin/pkg/rqdata"
 	tst "github.com/coredns/coredns/plugin/test"
 	"github.com/coredns/coredns/request"
 
@@ -25,7 +26,7 @@ func TestBuildRule(t *testing.T) {
 		{"drop [my/variable / 20", true},
 	}
 	for i, test := range tests {
-		engine := &ExpressionEngine{TypeDrop, NewRequestExtractorMapping("-")}
+		engine := &ExprEngine{TypeDrop, rqdata.NewMapping("-")}
 		_, err := engine.BuildRule(strings.Split(test.expression, " "))
 		if err != nil {
 			if !test.errorBuild {
@@ -90,7 +91,7 @@ func TestRuleEvaluate(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		engine := &ExpressionEngine{TypeDrop, NewRequestExtractorMapping("-")}
+		engine := &ExprEngine{TypeDrop, rqdata.NewMapping("-")}
 		rule, err := engine.BuildRule(append([]string{nameTypeAllow}, strings.Split(test.expression, " ")...))
 		if err != nil {
 			t.Errorf("Test %d, expr : %s - unexpected error at build rule : %s", i, test.expression, err)

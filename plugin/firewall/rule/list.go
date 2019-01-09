@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/coredns/coredns/plugin/pkg/policy"
+	"github.com/coredns/coredns/plugin/firewall/policy"
 	"github.com/coredns/coredns/request"
 )
 

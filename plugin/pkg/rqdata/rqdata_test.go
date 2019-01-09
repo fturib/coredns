@@ -1,18 +1,17 @@
-package policy
+package rqdata
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/coredns/coredns/request"
-
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/test"
+	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
 
-func buildExtractorOnSimpleMsg(mapping *RequestExtractorMapping) *RequestDataExtractor {
+func buildExtractorOnSimpleMsg(mapping *Mapping) *Extractor {
 
 	w := dnstest.NewRecorder(&test.ResponseWriter{})
 
@@ -21,10 +20,10 @@ func buildExtractorOnSimpleMsg(mapping *RequestExtractorMapping) *RequestDataExt
 	r.MsgHdr.AuthenticatedData = true
 	state := request.Request{Req: r, W: w}
 
-	return &RequestDataExtractor{state, mapping}
+	return &Extractor{state, mapping}
 }
 
-func buildExtractorOnRepliedMsg(mapping *RequestExtractorMapping) *RequestDataExtractor {
+func buildExtractorOnRepliedMsg(mapping *Mapping) *Extractor {
 	w := dnstest.NewRecorder(&test.ResponseWriter{})
 
 	r := new(dns.Msg)
@@ -36,16 +35,16 @@ func buildExtractorOnRepliedMsg(mapping *RequestExtractorMapping) *RequestDataEx
 	w.WriteMsg(ret)
 	state := request.Request{Req: ret, W: w}
 
-	return &RequestDataExtractor{state, mapping}
+	return &Extractor{state, mapping}
 }
 
 func TestNewRequestData(t *testing.T) {
 
-	mapping := NewRequestExtractorMapping("")
+	mapping := NewMapping("")
 	extractFromQuery := buildExtractorOnSimpleMsg(mapping)
 	extractFromReply := buildExtractorOnRepliedMsg(mapping)
 	tests := []struct {
-		extractor *RequestDataExtractor
+		extractor *Extractor
 		name      string
 		value     string
 		subValue  string

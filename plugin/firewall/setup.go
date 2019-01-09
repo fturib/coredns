@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/coredns/coredns/plugin/firewall/rule"
-
-	"github.com/coredns/coredns/plugin/pkg/policy"
-
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/firewall/policy"
+	"github.com/coredns/coredns/plugin/firewall/rule"
 
 	"github.com/mholt/caddy"
 )
@@ -88,7 +86,7 @@ func parse(c *caddy.Controller) (*firewall, error) {
 
 func (p *firewall) parseOptionOrRule(c *caddy.Controller) (*rule.Element, error) {
 	// by default, at least one engine is available : the ExpressionEngine
-	e := &policy.ExpressionEngine{}
+	e := policy.NewExprEngine()
 	switch c.Val() {
 	case policy.NameTypes[policy.TypeRefuse]:
 		fallthrough

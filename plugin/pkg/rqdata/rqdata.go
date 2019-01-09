@@ -1,4 +1,4 @@
-package policy
+package rqdata
 
 import (
 	"net"
@@ -14,23 +14,28 @@ import (
 
 type requestFunc func(state request.Request) string
 
-// RequestExtractorMapping define the mapping between 'name' of data and the way to extract that data from the Request
+// Mapping define the mapping between 'name' of data and the way to extract that data from the Request
 // it also defines what will be the empty value returned if the data behind the name is empty.
 // it is pretty static, and you should need to instantiate only once
-type RequestExtractorMapping struct {
+type Mapping struct {
 	replacements map[string]requestFunc
 	emptyValue   string
 }
 
-// RequestDataExtractor implements a Value(name) (value, valid) function
+// Extractor implements a Value(name) (value, valid) function
 // which allow to extract data from an existing DNS Request(or state)
-type RequestDataExtractor struct {
+type Extractor struct {
 	state     request.Request
-	requester *RequestExtractorMapping
+	requester *Mapping
 }
 
-// NewRequestExtractorMapping build the mapping name -> func to extract data from the Request
-func NewRequestExtractorMapping(emptyValue string) *RequestExtractorMapping {
+//NewExtractor return a new Extractor based on the Mapping and the Request provided
+func NewExtractor(r request.Request, m *Mapping) *Extractor {
+	return &Extractor{r, m}
+}
+
+// NewMapping build the mapping name -> func to extract data from the Request
+func NewMapping(emptyValue string) *Mapping {
 	replacements := map[string]requestFunc{
 		"type": func(state request.Request) string {
 			return state.Type()
@@ -115,13 +120,13 @@ func NewRequestExtractorMapping(emptyValue string) *RequestExtractorMapping {
 			return ""
 		},
 	}
-	return &RequestExtractorMapping{replacements, emptyValue}
+	return &Mapping{replacements, emptyValue}
 }
 
 // Value extract the data that is mapped to this name and return the corresponding value as a string
 // if that value is empty then the defaultValue is returned
 // Second parameter is a boolean that inform if the name itself is supported in the mapping
-func (rd *RequestDataExtractor) Value(name string) (string, bool) {
+func (rd *Extractor) Value(name string) (string, bool) {
 	f, ok := rd.requester.replacements[name]
 	if ok {
 		v := f(rd.state)
