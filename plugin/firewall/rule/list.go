@@ -9,7 +9,7 @@ import (
 	"github.com/coredns/coredns/request"
 )
 
-//Element is a structure that host a definition of policy Rule
+//Element is a structure that host a definition of policy Rule, and the Rule itself when created
 type Element struct {
 	Plugin string
 	Name   string
@@ -32,10 +32,9 @@ func NewList(ifNoResult int, isReply bool) (*List, error) {
 	return &List{Reply: isReply, DefaultPolicy: ifNoResult}, nil
 }
 
-//InstanciateRules ensure that each Elements of the List have a real built policy Rule
-func (p *List) InstanciateRules(engines map[string]policy.Engine) error {
+//BuildRules ensure that each Elements of the List have a real built policy Rule
+func (p *List) BuildRules(engines map[string]policy.Engine) error {
 	var err error
-	// lazy initialization.
 	for _, re := range p.Rules {
 		if re.Rule == nil {
 			e, ok := engines[re.Name]
@@ -70,7 +69,6 @@ func (p *List) buildReplyData(ctx context.Context, name string, state request.Re
 	if d, ok := data[name]; ok {
 		return d, nil
 	}
-	// first time this instance of enginer is triggered. Build the data
 	if e, ok := engines[name]; ok {
 		d, err := e.BuildReplyData(ctx, state, queryData)
 		if err != nil {
@@ -83,7 +81,7 @@ func (p *List) buildReplyData(ctx context.Context, name string, state request.Re
 }
 
 //Evaluate all policy one by one until one provide a valid result
-// if no Rule provides a result, the DefaultPolicy of the list applies
+//if no Rule can provide a result, the DefaultPolicy of the list applies
 func (p *List) Evaluate(ctx context.Context, state request.Request, data map[string]interface{}, engines map[string]policy.Engine) (int, error) {
 	var dataReply = make(map[string]interface{}, 0)
 	for i, r := range p.Rules {

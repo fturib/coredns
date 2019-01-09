@@ -40,7 +40,7 @@ func setup(c *caddy.Controller) error {
 		}
 		for _, loc := range []*rule.List{fw.query, fw.reply} {
 			// now that all engines are known, ensure to have all rules completely created
-			err = loc.InstanciateRules(fw.engines)
+			err = loc.BuildRules(fw.engines)
 			if err != nil {
 				return err
 			}
@@ -147,7 +147,7 @@ func (p *firewall) enrollEngines(c *caddy.Controller) error {
 	// These are plugins that implements the 'Engineer' interface
 	plugins := dnsserver.GetConfig(c).Handlers()
 	for _, pl := range plugins {
-		if e, ok := pl.(Engineer); ok {
+		if e, ok := pl.(policy.Engineer); ok {
 			if names, okn := eng[pl.Name()]; okn {
 				for n := range names {
 					re := e.Engine(n)

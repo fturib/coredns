@@ -91,7 +91,7 @@ func TestEnsureRules(t *testing.T) {
 		rl, _ := NewList(policy.TypeDrop, false)
 		rl.Rules = test.rules
 
-		err := rl.InstanciateRules(engines)
+		err := rl.BuildRules(engines)
 		if err != nil {
 			if !test.error {
 				t.Errorf("Test %d : unexpected error at build Rule : %s", i, err)
@@ -156,7 +156,7 @@ func TestEvaluate(t *testing.T) {
 	for i, tst := range tests {
 		rl, _ := NewList(policy.TypeDrop, false)
 		rl.Rules = tst.rules
-		rl.InstanciateRules(engines)
+		rl.BuildRules(engines)
 
 		state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
 		state.Req.SetQuestion("example.org.", dns.TypeA)

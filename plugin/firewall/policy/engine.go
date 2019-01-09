@@ -64,3 +64,8 @@ type Engine interface {
 	//BuildReplyData generate the data needed to evaluate - for one response - ALL the rules of this Engine
 	BuildReplyData(ctx context.Context, state request.Request, queryData interface{}) (interface{}, error)
 }
+
+// Engineer allow registration of Policy Engines. One plugin can declare several Engines.
+type Engineer interface {
+	Engine(name string) Engine
+}
