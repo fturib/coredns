@@ -55,7 +55,7 @@ func (p *List) Engines() map[string]string {
 	return eng
 }
 
-//BuildRules ensure that each Elements of the List have a real built policy Rule
+//BuildRules instanciate the Rule of each Element, based on the parameters collected from setup.
 func (p *List) BuildRules(engines map[string]policy.Engine) error {
 	var err error
 	for _, re := range p.Rules {

@@ -39,7 +39,7 @@ func setup(c *caddy.Controller) error {
 			return err
 		}
 		for _, loc := range []*rule.List{fw.query, fw.reply} {
-			// now that all engines are known, ensure to have all rules completely created
+			// now that all engines are known, ensure to build the rules for each element of the lists
 			err = loc.BuildRules(fw.engines)
 			if err != nil {
 				return err
