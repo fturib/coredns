@@ -9,22 +9,22 @@
 The firewall plugin defines a rule list of expressions that triggers workflow action on the DNS query or its response.
 A rule list is an ordered set of rules that are evaluated in sequence.
 Each rule has two parts: an action and an expression. When the rule is evaluated,
-first the expression get evaluated using Metadata and a go-like language.
-- If the expression evaluates to `true` the action is performed on the query and the rule list evaluation is considered over.
-- If the expression does not evaluates to `true` then next rule in sequence get evaluated
+first the expression is evaluated.
+- If the expression evaluates to `true` the action is performed on the query and the rule list evaluation ceases.
+- If the expression does not evaluates to `true` then next rule in sequence is evaluated.
 
 
 ## Syntax
 
 ~~~ txt
-firewall APPLICATION {
+firewall DIRECTION {
     ACTION EXPRESSION
     ACTION EXPRESSION
     ...
 }
 ~~~~
 
-* **APPLICATION** defines where is applied the firewall rulelist. It can be `query` or `response`
+* **DIRECTION** indicates if the _rule list_ will be applied to queries or responses. It can be `query` or `response`.
 
 * **ACTION** defines the workflow action to apply to the DNS operation if the **EXPRESSION** evaluates to the boolean `true`
 action is one of:
@@ -72,14 +72,14 @@ The following names are supported for querying information
 
 ## Examples
 
-Allow queries for exemple.com.
+Allow queries for example.com.
 Allow also the queries for google.com if those are A or AAAA type of queries
 NXDOMAIN every other queries
 
 ~~~ corefile
-example.org {
+.:53 {
    firewall query {
-      allow name =~ 'exemple.com'
+      allow name =~ 'example.com'
       allow name =~ 'google.com' && (type == 'A' || type == 'AAAA')
       block true
    }
@@ -87,9 +87,9 @@ example.org {
 ~~~
 
 
-Define the metadata labels `group_id` and `client_id` based on the content of OPT records (EDNS0)
-and use those values to filter the DNS queries: any query that have not the group_id 123456789 AND that has not the client_id matching ABCDEF will be returned REFUSED
-Also filter the reply with disallowing IP returned within a specific regular expression.
+Define the metadata labels `group_id` and `client_id` with values extracted from EDNS0.
+and use those values to filter the DNS queries: any query that doesn't have the group_id of `123456789` AND doesn't have the client_id of `ABCDEF` will be returned REFUSED.
+In addition, respond with a REFUSE if the first `A`/`AAAA` record in the response contains an IP in 172.217.0.0/16.
 
 
 ~~~ txt
