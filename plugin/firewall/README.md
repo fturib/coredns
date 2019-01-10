@@ -77,7 +77,7 @@ Allow also the queries for google.com if those are A or AAAA type of queries
 NXDOMAIN every other queries
 
 ~~~ corefile
-.:53 {
+. {
    firewall query {
       allow name =~ 'example.com'
       allow name =~ 'google.com' && (type == 'A' || type == 'AAAA')
