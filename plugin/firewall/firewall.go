@@ -51,7 +51,7 @@ func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	var (
 		status    = -1
 		respMsg   *dns.Msg
-		err       error
+		errfw     error
 		queryData = make(map[string]interface{}, 0)
 	)
 
@@ -60,7 +60,10 @@ func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	// ask policy for the Query Rulelist
 	action, err := p.query.Evaluate(ctx, state, queryData, p.engines)
 	if err != nil {
-		return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
+		m := new(dns.Msg)
+		m = m.SetRcode(r, dns.RcodeServerFailure)
+		w.WriteMsg(m)
+		return dns.RcodeSuccess, err
 	}
 
 	if action == policy.TypeAllow {
@@ -73,7 +76,10 @@ func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 		// ask other plugins to resolve
 		_, err := plugin.NextOrFailure(p.Name(), p.next, ctx, recorder, r)
 		if err != nil {
-			return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
+			m := new(dns.Msg)
+			m = m.SetRcode(r, dns.RcodeServerFailure)
+			w.WriteMsg(m)
+			return dns.RcodeSuccess, err
 		}
 		respMsg = writer.Msg
 
@@ -82,7 +88,10 @@ func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 		// whatever the response, send to the Reply RuleList for action
 		action, err = p.reply.Evaluate(ctx, stateReply, queryData, p.engines)
 		if err != nil {
-			return p.buildReply(dns.RcodeServerFailure, true, err, w, r)
+			m := new(dns.Msg)
+			m = m.SetRcode(r, dns.RcodeServerFailure)
+			w.WriteMsg(m)
+			return dns.RcodeSuccess, err
 		}
 	}
 
@@ -105,22 +114,15 @@ func (p *firewall) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	default:
 		// Any other action returned by RuleLists is considered an internal error
 		status = dns.RcodeServerFailure
-		err = errInvalidAction
+		errfw = errInvalidAction
 	}
-	return p.buildReply(status, false, err, w, r)
-
+	m := new(dns.Msg)
+	m = m.SetRcode(r, status)
+	if errfw == nil {
+		w.WriteMsg(m)
+	}
+	return dns.RcodeSuccess, errfw
 }
 
-func (p *firewall) buildReply(status int, errorExec bool, err error, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-
-	r.Rcode = status
-	r.Response = true
-	if status != dns.RcodeServerFailure || errorExec {
-		w.WriteMsg(r)
-	}
-
-	return dns.RcodeSuccess, err
-}
-
-// Name implements the Handler interface
+// Name implements the Handler interface.
 func (p *firewall) Name() string { return "firewall" }

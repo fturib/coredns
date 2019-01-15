@@ -29,9 +29,9 @@ firewall DIRECTION {
 * **ACTION** defines the workflow action to apply to the DNS operation if the **EXPRESSION** evaluates to the boolean `true`
 action is one of:
   - `allow` : continue the DNS resolution process
-  - `refuse` : interrupt the DNS resolution, just return the REFUSE result
-  - `block` : interrupt the DNS resolution, just return the NXDOMAIN result
-  - `drop` : interrupt the DNS resolution, just return the NODATA result
+  - `refuse` : interrupt the DNS resolution, reply with REFUSE code
+  - `block` : interrupt the DNS resolution, reply with NXDOMAIN code
+  - `drop` : interrupt the DNS resolution, do not reply
 
 * **EXPRESSION** defines the expression to evaluate in order to validate the action and interrupt the sequence of rules.
 Expression is a [go-like language](https://github.com/Knetic/govaluate/blob/master/MANUAL.md)

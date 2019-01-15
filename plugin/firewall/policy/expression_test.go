@@ -92,7 +92,7 @@ func TestRuleEvaluate(t *testing.T) {
 	for i, test := range tests {
 
 		engine := &ExprEngine{TypeDrop, rqdata.NewMapping("-")}
-		rule, err := engine.BuildRule(append([]string{nameTypeAllow}, strings.Split(test.expression, " ")...))
+		rule, err := engine.BuildRule(append([]string{NameTypes[TypeAllow]}, strings.Split(test.expression, " ")...))
 		if err != nil {
 			t.Errorf("Test %d, expr : %s - unexpected error at build rule : %s", i, test.expression, err)
 			continue

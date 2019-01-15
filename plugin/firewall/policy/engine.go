@@ -22,27 +22,13 @@ const (
 	TypeCount
 )
 
-const (
-	nameTypeNone   = "none"
-	nameTypeAllow  = "allow"
-	nameTypeRefuse = "refuse"
-	nameTypeBlock  = "block"
-	nameTypeDrop   = "drop"
-)
-
 // NameTypes keep a mapping of the byte constant to the corresponding name
-var NameTypes [TypeCount]string
-
-func initNameTypes() {
-	NameTypes[TypeNone] = nameTypeNone
-	NameTypes[TypeRefuse] = nameTypeRefuse
-	NameTypes[TypeAllow] = nameTypeAllow
-	NameTypes[TypeBlock] = nameTypeBlock
-	NameTypes[TypeDrop] = nameTypeDrop
-}
-
-func init() {
-	initNameTypes()
+var NameTypes = map[int]string{
+	TypeNone:   "none",
+	TypeAllow:  "allow",
+	TypeRefuse: "refuse",
+	TypeBlock:  "block",
+	TypeDrop:   "drop",
 }
 
 // Rule defines a policy for continuing DNS query processing.

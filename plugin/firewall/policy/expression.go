@@ -5,26 +5,24 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/coredns/coredns/plugin/pkg/rqdata"
-
-	"github.com/coredns/coredns/request"
-
 	"github.com/coredns/coredns/plugin/metadata"
+	"github.com/coredns/coredns/plugin/pkg/rqdata"
+	"github.com/coredns/coredns/request"
 
 	expr "github.com/Knetic/govaluate"
 )
 
 type ruleExpr struct {
-	kind        int
-	kindIfError int
-	expression  *expr.EvaluableExpression
+	action        int
+	actionIfError int
+	expression    *expr.EvaluableExpression
 }
 
 // ExprEngine implement interface Engine for Firewall plugin
 // it evaluate the rues using an the lib Knetic/govaluate
 type ExprEngine struct {
-	kindIfErrorEvaluation int
-	dataFromReq           *rqdata.Mapping
+	actionIfErrorEvaluation int
+	dataFromReq             *rqdata.Mapping
 }
 
 type dataAsParam struct {
@@ -67,7 +65,7 @@ func (x *ExprEngine) BuildRule(args []string) (Rule, error) {
 	if kind == TypeNone {
 		return nil, fmt.Errorf("invalid keyword %s for a policy rule", keyword)
 	}
-	return &ruleExpr{kind, x.kindIfErrorEvaluation, e}, nil
+	return &ruleExpr{kind, x.actionIfErrorEvaluation, e}, nil
 }
 
 func toBoolean(v interface{}) (bool, error) {
@@ -88,24 +86,25 @@ func (r *ruleExpr) Evaluate(data interface{}) (int, error) {
 
 	params, ok := data.(*dataAsParam)
 	if !ok {
-		return r.kindIfError, fmt.Errorf("evaluation of expression '%s' - params provided are of wrong type, expect a go Context", r.expression.String())
+		return r.actionIfError, fmt.Errorf("evaluation of expression '%s' - params provided are of wrong type, expect a go Context", r.expression.String())
 	}
 	res, err := r.expression.Eval(params)
 	if err != nil {
-		return r.kindIfError, fmt.Errorf("evaluation of expression '%s' return an error : %s", r.expression.String(), err)
+		return r.actionIfError, fmt.Errorf("evaluation of expression '%s' return an error : %s", r.expression.String(), err)
 	}
 	result, err := toBoolean(res)
 	if err != nil {
-		return r.kindIfError, fmt.Errorf("evaluation of expression '%s' return an non boolean value : %s", r.expression.String(), err)
+		return r.actionIfError, fmt.Errorf("evaluation of expression '%s' return an non boolean value : %s", r.expression.String(), err)
 	}
 
 	if result {
-		return r.kind, nil
+		return r.action, nil
 	}
 	return TypeNone, nil
 }
 
 // Get return the value associated with the variable
+// required by the interface of Knetic/govaluate for evaluation of the 'variables' in the expression
 // DataRequestExtractor is evaluated first, and if the name does not match then metadata is evaluated
 func (p *dataAsParam) Get(name string) (interface{}, error) {
 	v, exist := p.dataFromReq.Value(name)
