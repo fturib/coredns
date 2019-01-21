@@ -38,6 +38,9 @@ type Rewrite struct {
 
 // ServeDNS implements the plugin.Handler interface.
 func (rw Rewrite) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
+
+	// ensure r is a copy in order to not pollute the initial request
+	r = r.Copy()
 	wr := NewResponseReverter(w, r)
 	state := request.Request{W: w, Req: r}
 

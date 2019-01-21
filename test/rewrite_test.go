@@ -26,6 +26,7 @@ func TestRewrite(t *testing.T) {
 
 	testMX(t, udp)
 	testEdns0(t, udp)
+	testNoEdns0(t, udp)
 }
 
 func testMX(t *testing.T, server string) {
@@ -52,6 +53,8 @@ func testMX(t *testing.T, server string) {
 func testEdns0(t *testing.T, server string) {
 	m := new(dns.Msg)
 	m.SetQuestion("example.com.", dns.TypeA)
+	// enable EDNS0 from client : it should come back with all values ??
+	m.SetEdns0(4096, true)
 
 	r, err := dns.Exchange(m, server)
 	if err != nil {
@@ -82,5 +85,30 @@ func testEdns0(t *testing.T, server string) {
 		} else {
 			t.Errorf("Expected EDNS0_LOCAL but got %v", o.Option[0])
 		}
+	}
+}
+
+func testNoEdns0(t *testing.T, server string) {
+	m := new(dns.Msg)
+	m.SetQuestion("example.com.", dns.TypeA)
+
+	r, err := dns.Exchange(m, server)
+	if err != nil {
+		t.Fatalf("Expected to receive reply, but didn't: %s", err)
+	}
+
+	// expect answer section with A record in it
+	if len(r.Answer) == 0 {
+		t.Error("Expected to at least one RR in the answer section, got none")
+	}
+	if r.Answer[0].Header().Rrtype != dns.TypeA {
+		t.Errorf("Expected RR to A, got: %d", r.Answer[0].Header().Rrtype)
+	}
+	if r.Answer[0].(*dns.A).A.String() != "192.0.2.53" {
+		t.Errorf("Expected 192.0.2.53, got: %s", r.Answer[0].(*dns.A).A.String())
+	}
+	o := r.IsEdns0()
+	if !(o == nil || len(o.Option) == 0) {
+		t.Error("Expected to be no EDNS0 options in the reply")
 	}
 }
