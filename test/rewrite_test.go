@@ -24,9 +24,9 @@ func TestRewrite(t *testing.T) {
 
 	defer i.Stop()
 
-	//testMX(t, udp)
+	testMX(t, udp)
 	testEdns0(t, udp)
-	//testNoEdns0(t, udp)
+	testNoEdns0(t, udp)
 }
 
 func testMX(t *testing.T, server string) {
