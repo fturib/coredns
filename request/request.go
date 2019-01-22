@@ -196,6 +196,15 @@ func (r *Request) Size() int {
 func (r *Request) SizeAndDo(m *dns.Msg) bool {
 	o := r.Req.IsEdns0()
 	if o == nil {
+		// ensure remove OPT if initial query was not Edns0 - compliance with https://tools.ietf.org/html/rfc6891#page-10
+		for i := len(m.Extra) - 1; i >= 0; i-- {
+			if m.Extra[i].Header().Rrtype == dns.TypeOPT {
+				m.Extra[i] = m.Extra[len(m.Extra)-1]
+				m.Extra[len(m.Extra)-1] = nil
+				m.Extra = m.Extra[:len(m.Extra)-1]
+				break
+			}
+		}
 		return false
 	}
 
