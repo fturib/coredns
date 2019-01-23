@@ -41,13 +41,14 @@ func (rw Rewrite) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg
 	wr := NewResponseReverter(w, r)
 	state := request.Request{W: w, Req: r}
 
+ApplyRules:
 	for _, rule := range rw.Rules {
 		switch result := rule.Rewrite(ctx, state); result {
 		case RewriteDone:
 			if !validName(state.Req.Question[0].Name) {
 				x := state.Req.Question[0].Name
 				log.Errorf("Invalid name after rewrite: %s", x)
-				state.Req.Question[0] = wr.originalQuestion
+				state.Req.Question[0] = wr.receivedRequest.Question[0]
 				return dns.RcodeServerFailure, fmt.Errorf("invalid name after rewrite: %s", x)
 			}
 			respRule := rule.GetResponseRule()
@@ -56,16 +57,14 @@ func (rw Rewrite) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg
 				wr.ResponseRules = append(wr.ResponseRules, respRule)
 			}
 			if rule.Mode() == Stop {
-				if rw.noRevert {
-					return plugin.NextOrFailure(rw.Name(), rw.Next, ctx, w, r)
-				}
-				return plugin.NextOrFailure(rw.Name(), rw.Next, ctx, wr, r)
+				break ApplyRules
 			}
 		case RewriteIgnored:
 			break
 		}
 	}
-	if rw.noRevert || len(wr.ResponseRules) == 0 {
+
+	if rw.noRevert {
 		return plugin.NextOrFailure(rw.Name(), rw.Next, ctx, w, r)
 	}
 	return plugin.NextOrFailure(rw.Name(), rw.Next, ctx, wr, r)

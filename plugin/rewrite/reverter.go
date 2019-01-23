@@ -1,10 +1,11 @@
 package rewrite
 
 import (
-	"github.com/miekg/dns"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/miekg/dns"
 )
 
 // ResponseRule contains a rule to rewrite a response with.
@@ -21,24 +22,61 @@ type ResponseRule struct {
 // dig will complain with ';; Question section mismatch: got example.org/HINFO/IN'
 type ResponseReverter struct {
 	dns.ResponseWriter
-	originalQuestion dns.Question
-	ResponseRewrite  bool
-	ResponseRules    []ResponseRule
+	receivedRequest *dns.Msg
+	sharedRequest   *dns.Msg
+	ResponseRewrite bool
+	ResponseRules   []ResponseRule
+}
+
+func removeOPT(m *dns.Msg) {
+	for i := len(m.Extra) - 1; i >= 0; i-- {
+		if m.Extra[i].Header().Rrtype == dns.TypeOPT {
+			copy(m.Extra[i:], m.Extra[i+1:])
+			m.Extra[len(m.Extra)-1] = nil
+			m.Extra = m.Extra[:len(m.Extra)-1]
+			return
+		}
+	}
+}
+
+// replaceOPTHeader set the OPT Header with the one provided.
+func replaceOPTHeader(m *dns.Msg, hdr *dns.RR_Header) {
+	for i := len(m.Extra) - 1; i >= 0; i-- {
+		if m.Extra[i].Header().Rrtype == dns.TypeOPT {
+			m.Extra[i].(*dns.OPT).Hdr = *hdr
+			return
+		}
+	}
+	opt := dns.OPT{*hdr, make([]dns.EDNS0, 0)}
+	m.Extra = append(m.Extra, &opt)
 }
 
 // NewResponseReverter returns a pointer to a new ResponseReverter.
 func NewResponseReverter(w dns.ResponseWriter, r *dns.Msg) *ResponseReverter {
-	return &ResponseReverter{
-		ResponseWriter:   w,
-		originalQuestion: r.Question[0],
+	rr := &ResponseReverter{
+		ResponseWriter:  w,
+		receivedRequest: r.Copy(),
+		sharedRequest:   r,
 	}
+	return rr
 }
 
 // WriteMsg records the status code and calls the underlying ResponseWriter's WriteMsg method.
-func (r *ResponseReverter) WriteMsg(res *dns.Msg) error {
-	res.Question[0] = r.originalQuestion
+func (r *ResponseReverter) WriteMsg(resp *dns.Msg) error {
+	receivedOpt := r.receivedRequest.IsEdns0()
+	if receivedOpt != nil {
+		replaceOPTHeader(r.sharedRequest, receivedOpt.Header())
+	} else {
+		removeOPT(r.sharedRequest)
+		removeOPT(resp)
+	}
+
+	resp.Question[0] = r.receivedRequest.Question[0]
+
 	if r.ResponseRewrite {
-		for _, rr := range res.Answer {
+
+		// revert some rewritten fields and ONLY for the Active rules.
+		for _, rr := range resp.Answer {
 			var isNameRewritten bool = false
 			var isTtlRewritten bool = false
 			var name string = rr.Header().Name
@@ -75,7 +113,7 @@ func (r *ResponseReverter) WriteMsg(res *dns.Msg) error {
 			}
 		}
 	}
-	return r.ResponseWriter.WriteMsg(res)
+	return r.ResponseWriter.WriteMsg(resp)
 }
 
 // Write is a wrapper that records the size of the message that gets written.

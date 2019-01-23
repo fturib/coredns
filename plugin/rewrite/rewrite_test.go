@@ -20,6 +20,14 @@ func msgPrinter(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, err
 	return 0, nil
 }
 
+func handlerRequestSaver(m *dns.Msg) plugin.HandlerFunc {
+	return func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
+		*m = *r.Copy()
+		w.WriteMsg(r)
+		return 0, nil
+	}
+}
+
 func TestNewRule(t *testing.T) {
 	tests := []struct {
 		args        []string
@@ -247,11 +255,6 @@ func TestRewrite(t *testing.T) {
 }
 
 func TestRewriteEDNS0Local(t *testing.T) {
-	rw := Rewrite{
-		Next:     plugin.HandlerFunc(msgPrinter),
-		noRevert: true,
-	}
-
 	tests := []struct {
 		fromOpts []dns.EDNS0
 		args     []string
@@ -297,10 +300,22 @@ func TestRewriteEDNS0Local(t *testing.T) {
 	}
 
 	ctx := context.TODO()
+
+	// EDNS0 does not ensure to return the options in the DNS response
+	// thus, we need to save the modified request and verify it has the expected changes.
+	var savedReq dns.Msg
+	rw := Rewrite{
+		Next:     plugin.HandlerFunc(handlerRequestSaver(&savedReq)),
+		noRevert: false,
+	}
+
 	for i, tc := range tests {
 		m := new(dns.Msg)
 		m.SetQuestion("example.com.", dns.TypeA)
 		m.Question[0].Qclass = dns.ClassINET
+		if tc.doBool {
+			m.SetEdns0(4096, true)
+		}
 
 		r, err := newEdns0Rule("stop", tc.args...)
 		if err != nil {
@@ -312,9 +327,7 @@ func TestRewriteEDNS0Local(t *testing.T) {
 		rec := dnstest.NewRecorder(&test.ResponseWriter{})
 		rw.ServeDNS(ctx, rec, m)
 
-		resp := rec.Msg
-		o := resp.IsEdns0()
-		o.SetDo(tc.doBool)
+		o := savedReq.IsEdns0()
 		if o == nil {
 			t.Errorf("Test %d: EDNS0 options not set", i)
 			continue
@@ -335,8 +348,9 @@ func TestEdns0LocalMultiRule(t *testing.T) {
 	r, _ = newEdns0Rule("stop", "local", "set", "0xffee", "fedcba")
 	rules = append(rules, r)
 
+	var savedReq dns.Msg
 	rw := Rewrite{
-		Next:     plugin.HandlerFunc(msgPrinter),
+		Next:     plugin.HandlerFunc(handlerRequestSaver(&savedReq)),
 		Rules:    rules,
 		noRevert: true,
 	}
@@ -360,19 +374,15 @@ func TestEdns0LocalMultiRule(t *testing.T) {
 		m := new(dns.Msg)
 		m.SetQuestion("example.com.", dns.TypeA)
 		m.Question[0].Qclass = dns.ClassINET
+		m.SetEdns0(4096, false)
 		if tc.fromOpts != nil {
 			o := m.IsEdns0()
-			if o == nil {
-				m.SetEdns0(4096, true)
-				o = m.IsEdns0()
-			}
 			o.Option = append(o.Option, tc.fromOpts...)
 		}
 		rec := dnstest.NewRecorder(&test.ResponseWriter{})
 		rw.ServeDNS(ctx, rec, m)
 
-		resp := rec.Msg
-		o := resp.IsEdns0()
+		o := savedReq.IsEdns0()
 		if o == nil {
 			t.Errorf("Test %d: EDNS0 options not set", i)
 			continue
@@ -537,6 +547,7 @@ func TestRewriteEDNS0LocalVariable(t *testing.T) {
 	for i, tc := range tests {
 		m := new(dns.Msg)
 		m.SetQuestion("example.com.", dns.TypeA)
+		m.SetEdns0(4096, false)
 
 		r, err := newEdns0Rule("stop", tc.args...)
 		if err != nil {
@@ -661,6 +672,7 @@ func TestRewriteEDNS0Subnet(t *testing.T) {
 	for i, tc := range tests {
 		m := new(dns.Msg)
 		m.SetQuestion("example.com.", dns.TypeA)
+		m.SetEdns0(4096, false)
 
 		r, err := newEdns0Rule("stop", tc.args...)
 		if err != nil {
@@ -673,11 +685,11 @@ func TestRewriteEDNS0Subnet(t *testing.T) {
 
 		resp := rec.Msg
 		o := resp.IsEdns0()
-		o.SetDo(tc.doBool)
 		if o == nil {
 			t.Errorf("Test %d: EDNS0 options not set", i)
 			continue
 		}
+		o.SetDo(tc.doBool)
 		if o.Do() != tc.doBool {
 			t.Errorf("Test %d: Expected %v but got %v", i, tc.doBool, o.Do())
 		}
