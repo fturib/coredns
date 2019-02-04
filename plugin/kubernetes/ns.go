@@ -23,6 +23,8 @@ func (k *Kubernetes) nsAddr() *dns.A {
 	)
 
 	rr := new(dns.A)
+	rr.Hdr.Class = dns.ClassINET
+	rr.Hdr.Rrtype = dns.TypeA
 	localIP := k.interfaceAddrsFunc()
 	rr.A = localIP
 
@@ -41,7 +43,6 @@ FindEndpoint:
 
 	if len(svcName) == 0 {
 		rr.Hdr.Name = defaultNSName
-		rr.A = localIP
 		return rr
 	}
 

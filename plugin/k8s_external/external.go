@@ -38,6 +38,7 @@ type External struct {
 	hostmaster string
 	apex       string
 	ttl        uint32
+	transferTo []string
 
 	externalFunc     func(request.Request) ([]msg.Service, int)
 	externalAddrFunc func(request.Request) []dns.RR

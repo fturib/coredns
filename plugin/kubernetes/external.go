@@ -19,6 +19,10 @@ func (k *Kubernetes) External(state request.Request) ([]msg.Service, int) {
 	segs := dns.SplitDomainName(base)
 	last := len(segs) - 1
 	if last < 0 {
+		// this is a request for the zone itself. Return all services that are in exposed namespaces
+		if state.Name() == state.Zone {
+			return k.externalAll(state)
+		}
 		return nil, dns.RcodeServerFailure
 	}
 	// We dealing with a fairly normal domain name here, but; we still need to have the service
@@ -67,20 +71,49 @@ func (k *Kubernetes) External(state request.Request) ([]msg.Service, int) {
 			continue
 		}
 
-		for _, ip := range svc.ExternalIPs {
-			for _, p := range svc.Ports {
-				if !(match(port, p.Name) && match(protocol, string(p.Protocol))) {
-					continue
-				}
-				rcode = dns.RcodeSuccess
-				s := msg.Service{Host: ip, Port: int(p.Port), TTL: k.ttl}
-				s.Key = strings.Join([]string{zonePath, svc.Namespace, svc.Name}, "/")
-
-				services = append(services, s)
-			}
-		}
+		services = append(services, svcToMsg(svc, zonePath, port, protocol, k.ttl)...)
+	}
+	if len(services) > 0 {
+		rcode = dns.RcodeSuccess
 	}
 	return services, rcode
+}
+
+func (k *Kubernetes) externalAll(state request.Request) ([]msg.Service, int) {
+
+	serviceList := k.APIConn.ServiceList()
+
+	services := []msg.Service{}
+	zonePath := msg.Path(state.Zone, coredns)
+	rcode := dns.RcodeNameError
+
+	for _, svc := range serviceList {
+		if !k.namespaceExposed(svc.Namespace) {
+			continue
+		}
+
+		services = append(services, svcToMsg(svc, zonePath, "*", "*", k.ttl)...)
+	}
+	if len(services) > 0 {
+		rcode = dns.RcodeSuccess
+	}
+	return services, rcode
+}
+
+func svcToMsg(svc *object.Service, zonePath string, port string, protocol string, ttl uint32) []msg.Service {
+	services := []msg.Service{}
+	for _, ip := range svc.ExternalIPs {
+		for _, p := range svc.Ports {
+			if !(match(port, p.Name) && match(protocol, string(p.Protocol))) {
+				continue
+			}
+			s := msg.Service{Host: ip, Port: int(p.Port), TTL: ttl}
+			s.Key = strings.Join([]string{zonePath, svc.Namespace, svc.Name}, "/")
+
+			services = append(services, s)
+		}
+	}
+	return services
 }
 
 // ExternalAddress returns the external service address(es) for the CoreDNS service.

@@ -3,6 +3,8 @@ package external
 import (
 	"strconv"
 
+	prs "github.com/coredns/coredns/plugin/pkg/parse"
+
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
 
@@ -77,6 +79,15 @@ func parse(c *caddy.Controller) (*External, error) {
 					return nil, c.ArgErr()
 				}
 				e.apex = args[0]
+			case "transfer":
+				tos, froms, err := prs.Transfer(c, false)
+				if err != nil {
+					return nil, err
+				}
+				if len(froms) != 0 {
+					return nil, c.Errf("transfer from is not supported with this plugin")
+				}
+				e.transferTo = tos
 			default:
 				return nil, c.Errf("unknown property '%s'", c.Val())
 			}

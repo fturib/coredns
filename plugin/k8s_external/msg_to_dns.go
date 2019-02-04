@@ -61,10 +61,7 @@ func (e *External) aaaa(services []msg.Service, state request.Request) (records 
 	return records
 }
 
-func (e *External) srv(services []msg.Service, state request.Request) (records, extra []dns.RR) {
-	dup := make(map[item]struct{})
-
-	// Looping twice to get the right weight vs priority. This might break because we may drop duplicate SRV records latter on.
+func buildWeights(services []msg.Service) map[int]int {
 	w := make(map[int]int)
 	for _, s := range services {
 		weight := 100
@@ -77,6 +74,13 @@ func (e *External) srv(services []msg.Service, state request.Request) (records, 
 		}
 		w[s.Priority] += weight
 	}
+	return w
+}
+
+func (e *External) srv(services []msg.Service, state request.Request) (records, extra []dns.RR) {
+	dup := make(map[item]struct{})
+	w := buildWeights(services)
+	// Looping twice to get the right weight vs priority. This might break because we may drop duplicate SRV records latter on.
 	for _, s := range services {
 		// Don't add the entry if the port is -1 (invalid). The kubernetes plugin uses port -1 when a service/endpoint
 		// does not have any declared ports.
@@ -119,6 +123,56 @@ func (e *External) srv(services []msg.Service, state request.Request) (records, 
 		}
 	}
 	return records, extra
+}
+
+func (e *External) axfr(services []msg.Service, state request.Request) (records []dns.RR) {
+	dup := make(map[item]struct{})
+	w := buildWeights(services)
+	// Looping twice to get the right weight vs priority. This might break because we may drop duplicate SRV records latter on.
+	for _, s := range services {
+		// Don't add the entry if the port is -1 (invalid). The kubernetes plugin uses port -1 when a service/endpoint
+		// does not have any declared ports.
+		if s.Port == -1 {
+			continue
+		}
+		w1 := 100.0 / float64(w[s.Priority])
+		if s.Weight == 0 {
+			w1 *= 100
+		} else {
+			w1 *= float64(s.Weight)
+		}
+		weight := uint16(math.Floor(w1))
+
+		what, ip := s.HostType()
+
+		switch what {
+		case dns.TypeCNAME:
+			// can't happen
+
+		case dns.TypeA, dns.TypeAAAA:
+			addr := s.Host
+			s.Host = msg.Domain(s.Key)
+			srv := s.NewSRV(s.Host, weight)
+
+			if ok := isDuplicate(dup, srv.Target, "", srv.Port); !ok {
+				records = append(records, srv)
+			}
+
+			if ok := isDuplicate(dup, srv.Target, addr, 0); !ok {
+				switch what {
+				case dns.TypeA:
+					rr := s.NewA(s.Host, ip)
+					rr.Hdr.Ttl = e.ttl
+					records = append(records, rr)
+				case dns.TypeAAAA:
+					rr := s.NewAAAA(s.Host, ip)
+					rr.Hdr.Ttl = e.ttl
+					records = append(records, rr)
+				}
+			}
+		}
+	}
+	return records
 }
 
 // not sure if this is even needed.

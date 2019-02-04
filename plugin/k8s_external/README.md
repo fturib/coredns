@@ -29,9 +29,8 @@ ns1.dns.example.org.  5 IN  A    ....
 ns1.dns.example.org.  5 IN  AAAA ....
 ~~~
 
-Note we use the `dns` subdomain to place the records the DNS needs (see the `apex` directive). Also
-note the SOA's serial number is static. The IP addresses of the nameserver records are those of the
-CoreDNS service.
+Note we use the `dns` subdomain to place the records the DNS needs (see the `apex` directive).
+The IP addresses of the nameserver records are those of the CoreDNS service.
 
 The *k8s_external* plugin handles the subdomain `dns` and the apex of the zone by itself, all other
 queries are resolved to addresses in the cluster.
@@ -51,11 +50,17 @@ this extended syntax.
 k8s_external [ZONE...] {
     apex APEX
     ttl TTL
+    transfer to ADDRESS...
 }
 ~~~
 
 * **APEX** is the name (DNS label) to use the apex records, defaults to `dns`.
 * `ttl` allows you to set a custom **TTL** for responses. The default is 5 (seconds).
+* `transfer` enables zone transfers. It may be specified multiples times. `To` signals the direction
+  (only `to` is allow). **ADDRESS** must be denoted in CIDR notation (127.0.0.1/32 etc.) or just as
+  plain addresses. The special wildcard `*` means: the entire internet.
+  Sending DNS notifies is not supported.
+
 
 # Examples
 
