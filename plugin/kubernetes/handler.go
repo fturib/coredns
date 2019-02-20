@@ -49,14 +49,14 @@ func (k Kubernetes) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.M
 		records, extra, err = plugin.SRV(&k, zone, state, opt)
 	case dns.TypeSOA:
 		records, err = plugin.SOA(&k, zone, state, opt)
+	case dns.TypeAXFR, dns.TypeIXFR:
+		return k.Transfer(ctx, state)
 	case dns.TypeNS:
 		if state.Name() == zone {
 			records, extra, err = plugin.NS(&k, zone, state, opt)
 			break
 		}
 		fallthrough
-	case dns.TypeAXFR, dns.TypeIXFR:
-		k.Transfer(ctx, state)
 	default:
 		// Do a fake A lookup, so we can distinguish between NODATA and NXDOMAIN
 		_, err = plugin.A(&k, zone, state, nil, opt)

@@ -45,11 +45,20 @@ func (k *Kubernetes) Transfer(ctx context.Context, state request.Request) (int, 
 	ch := make(chan *dns.Envelope)
 	tr := new(dns.Transfer)
 
+	nsreq := new(dns.Msg)
+	nsreq.SetQuestion(state.QName(), dns.TypeNS)
+	stateNS := request.Request{Req: nsreq}
+	ns, _, err := plugin.NS(k, state.Zone, stateNS, plugin.Options{})
+	if err != nil {
+		return dns.RcodeServerFailure, nil
+	}
+
 	soa, err := plugin.SOA(k, state.Zone, state, plugin.Options{})
 	if err != nil {
 		return dns.RcodeServerFailure, nil
 	}
 
+	records = append(ns, records...)
 	records = append(soa, records...)
 	records = append(records, soa...)
 	go func(ch chan *dns.Envelope) {

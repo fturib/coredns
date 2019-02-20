@@ -9,7 +9,7 @@ import (
 )
 
 func isDefaultNS(name, zone string) bool {
-	return strings.Index(name, defaultNSName) == 0 && strings.Index(name, zone) == len(defaultNSName)
+	return strings.Index(name, defaultNSName) == 0 && strings.Index(strings.ToLower(name), strings.ToLower(zone)) == len(defaultNSName)
 }
 
 // nsAddr return the A record for the CoreDNS service in the cluster. If it fails that it fallsback

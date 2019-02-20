@@ -112,7 +112,7 @@ func (k *Kubernetes) Services(state request.Request, exact bool, opt plugin.Opti
 		return []msg.Service{svc}, nil
 	}
 
-	if state.QType() == dns.TypeA && isDefaultNS(state.Name(), state.Zone) {
+	if state.QType() == dns.TypeA && isDefaultNS(state.QName(), state.Zone) {
 		// If this is an A request for "ns.dns", respond with a "fake" record for coredns.
 		// SOA records always use this hardcoded name
 		ns := k.nsAddr()
