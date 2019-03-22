@@ -22,8 +22,8 @@ type Throttle struct {
 // ServeDNS implements the plugin.Handler interface.
 func (t *Throttle) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 
-	count := atomic.AddInt64(&t.workerCount, 1)
-	defer atomic.AddInt64(&t.workerCount, -1)
+	count := atomic.AddInt64(&(t.workerCount), 1)
+	defer atomic.AddInt64(&(t.workerCount), -1)
 
 	server := metrics.WithServer(ctx)
 	throttleCount.WithLabelValues(server, incoming).Inc()
@@ -44,7 +44,7 @@ func (t *Throttle) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 }
 
 // Name implements the Handler interface.
-func (t Throttle) Name() string { return throttle }
+func (t *Throttle) Name() string { return throttle }
 
 var (
 	throttleCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{

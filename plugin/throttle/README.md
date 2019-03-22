@@ -2,7 +2,7 @@
 
 ## Name
 
-*throttle* - limits the number of inflight queries.
+*throttle* - limits the maximum number of inflight queries.
 
 ## Description
 
