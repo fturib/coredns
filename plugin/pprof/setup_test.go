@@ -14,6 +14,9 @@ func TestPProf(t *testing.T) {
 		{`pprof`, false},
 		{`pprof 1.2.3.4:1234`, false},
 		{`pprof :1234`, false},
+		{`pprof :1234 -1`, false},
+		{`pprof :1234 0`, false},
+		{`pprof :1234 20`, false},
 		{`pprof {}`, true},
 		{`pprof /foo`, true},
 		{`pprof {

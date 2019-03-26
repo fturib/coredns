@@ -2,6 +2,7 @@ package pprof
 
 import (
 	"net"
+	"strconv"
 	"sync"
 
 	"github.com/coredns/coredns/plugin"
@@ -32,14 +33,21 @@ func setup(c *caddy.Controller) error {
 		i++
 
 		args := c.RemainingArgs()
-		if len(args) == 1 {
+		if len(args) >= 1 {
 			h.addr = args[0]
 			_, _, e := net.SplitHostPort(h.addr)
 			if e != nil {
 				return e
 			}
 		}
-		if len(args) > 1 {
+		if len(args) >= 2 {
+			l, err := strconv.ParseInt(args[1], 10, 32)
+			if err != nil {
+				return plugin.Error("pprof", err)
+			}
+			h.rateBloc = int(l)
+		}
+		if len(args) > 2 {
 			return plugin.Error("pprof", c.ArgErr())
 		}
 		if c.NextBlock() {
