@@ -17,14 +17,16 @@ This plugin can only be used once per Server Block.
 ## Syntax
 
 ~~~
-pprof [ADDRESS] [BLOCKRATE]
+pprof [ADDRESS] {
+   block [RATE]
+}
 ~~~
 
 - If not specified, **ADDRESS** defaults to localhost:6053.
 
-- **BLOCKRATE** allow to enable `block` profiling. see [Diagnostics, chapter profiling](https://golang.org/doc/diagnostics.html).
-if you need to use `block` profile, set a positive value to **BLOCKRATE**. See [runtime.SetBlockProfileRate](https://golang.org/pkg/runtime/#SetBlockProfileRate).
- if not specified, **BLOCKRATE** default's to 0, which means block profiling disabled.
+- `block` option allow to enable the `block` profiling. see [Diagnostics, chapter profiling](https://golang.org/doc/diagnostics.html).
+if you need to use `block` profile, set a positive value to **RATE**. See [runtime.SetBlockProfileRate](https://golang.org/pkg/runtime/#SetBlockProfileRate).
+ if not specified, **RATE** default's to 1. if `block` option is not specified the `block` profiling is disabled.
 
 ## Examples
 
@@ -50,7 +52,9 @@ Listen on an all addresses on port 6060: and enable block profiling
 
 ~~~ txt
 . {
-    pprof :6060 1
+    pprof :6060 {
+       block
+    }
 }
 ~~~
 

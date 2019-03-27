@@ -33,26 +33,38 @@ func setup(c *caddy.Controller) error {
 		i++
 
 		args := c.RemainingArgs()
-		if len(args) >= 1 {
+		if len(args) == 1 {
 			h.addr = args[0]
 			_, _, e := net.SplitHostPort(h.addr)
 			if e != nil {
-				return e
+				return plugin.Error("pprof", c.Errf("%v", e))
 			}
 		}
-		if len(args) >= 2 {
-			l, err := strconv.ParseInt(args[1], 10, 32)
-			if err != nil {
-				return plugin.Error("pprof", err)
+
+		if len(args) > 1 {
+			return plugin.Error("pprof", c.ArgErr())
+		}
+
+		for c.NextBlock() {
+			switch c.Val() {
+			case "block":
+				args := c.RemainingArgs()
+				if len(args) > 1 {
+					return plugin.Error("pprof", c.ArgErr())
+				}
+				h.rateBloc = 1
+				if len(args) > 0 {
+					t, err := strconv.Atoi(args[0])
+					if err != nil {
+						return plugin.Error("pprof", c.Errf("property '%s' invalid integer value '%v'", "block", args[0]))
+					}
+					h.rateBloc = t
+				}
+			default:
+				return plugin.Error("pprof", c.Errf("unknown property '%s'", c.Val()))
 			}
-			h.rateBloc = int(l)
 		}
-		if len(args) > 2 {
-			return plugin.Error("pprof", c.ArgErr())
-		}
-		if c.NextBlock() {
-			return plugin.Error("pprof", c.ArgErr())
-		}
+
 	}
 
 	pprofOnce.Do(func() {
